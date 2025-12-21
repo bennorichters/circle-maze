@@ -16,7 +16,7 @@ impl CircleCoordinate {
     }
 }
 
-pub fn roundDownToPowerOf2(n: usize) -> usize {
+fn roundDownToPowerOf2(n: usize) -> usize {
     if n == 0 {
         return 0;
     }
