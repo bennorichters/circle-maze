@@ -141,4 +141,25 @@ mod tests {
         let coord1_c10 = CircleCoordinate::create_with_arc_index(10, 1).unwrap();
         assert_eq!(coord1_c10.angle, Fraction::new(360u64, 48u64));
     }
+
+    #[test]
+    fn test_create_with_fraction() {
+        let coord0 = CircleCoordinate::create_with_fraction(0, Fraction::from(0)).unwrap();
+        assert_eq!(coord0.arc_index, 0);
+
+        let coord1 = CircleCoordinate::create_with_fraction(0, Fraction::from(60)).unwrap();
+        assert_eq!(coord1.arc_index, 1);
+
+        let coord2 = CircleCoordinate::create_with_fraction(0, Fraction::from(120)).unwrap();
+        assert_eq!(coord2.arc_index, 2);
+
+        let coord3 = CircleCoordinate::create_with_fraction(0, Fraction::from(180)).unwrap();
+        assert_eq!(coord3.arc_index, 3);
+
+        let coord4 = CircleCoordinate::create_with_fraction(0, Fraction::from(240)).unwrap();
+        assert_eq!(coord4.arc_index, 4);
+
+        let coord5 = CircleCoordinate::create_with_fraction(0, Fraction::from(300)).unwrap();
+        assert_eq!(coord5.arc_index, 5);
+    }
 }
