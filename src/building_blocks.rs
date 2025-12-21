@@ -5,9 +5,9 @@ const ANGLE_FULL_CIRCLE: usize = 360;
 // An arc with this angle (60 degrees) is the first arc which angle is a divider of the
 // full circle (360 degrees) and has a length greater than the radius of the circle.
 // (The angle for which the length of the arc equals the radius is 1 rad ~ 57.3 degrees.)
-const ANGLE_STEP_FIRST_CIRCLE: usize = 60;
+const ANGULAR_DIVISOR_FIRST_CIRCLE: usize = 60;
 
-const ARCS_FIRST_CIRCLE: usize = ANGLE_FULL_CIRCLE / ANGLE_STEP_FIRST_CIRCLE;
+const ARCS_FIRST_CIRCLE: usize = ANGLE_FULL_CIRCLE / ANGULAR_DIVISOR_FIRST_CIRCLE;
 
 pub struct CircleCoordinate {
     circle: usize,
