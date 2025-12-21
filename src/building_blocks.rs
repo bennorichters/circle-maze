@@ -17,7 +17,7 @@ pub struct CircleCoordinate {
 
 impl CircleCoordinate {
     pub fn new(circle: usize, arc_index: usize, angle: Fraction) -> Result<Self, String> {
-        if arc_index > (calcTotalArcs(circle) - 1) {
+        if arc_index > (calc_total_arcs(circle) - 1) {
             Err(format!(
                 "arcIndex too big for {}, arcIndex: {}",
                 circle, arc_index
@@ -32,7 +32,7 @@ impl CircleCoordinate {
     }
 }
 
-fn roundDownToPowerOf2(n: usize) -> usize {
+fn round_down_to_power_of2(n: usize) -> usize {
     if n == 0 {
         return 1;
     }
@@ -40,8 +40,8 @@ fn roundDownToPowerOf2(n: usize) -> usize {
     1 << msb_pos
 }
 
-fn calcTotalArcs(circle: usize) -> usize {
-    roundDownToPowerOf2(circle) * ARCS_FIRST_CIRCLE
+fn calc_total_arcs(circle: usize) -> usize {
+    round_down_to_power_of2(circle) * ARCS_FIRST_CIRCLE
 }
 
 #[cfg(test)]
@@ -49,30 +49,30 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_roundDownToPowerOf2() {
-        assert_eq!(roundDownToPowerOf2(0), 1);
-        assert_eq!(roundDownToPowerOf2(1), 1);
-        assert_eq!(roundDownToPowerOf2(2), 2);
-        assert_eq!(roundDownToPowerOf2(3), 2);
-        assert_eq!(roundDownToPowerOf2(4), 4);
-        assert_eq!(roundDownToPowerOf2(5), 4);
-        assert_eq!(roundDownToPowerOf2(8), 8);
-        assert_eq!(roundDownToPowerOf2(15), 8);
-        assert_eq!(roundDownToPowerOf2(1025), 1024);
+    fn test_round_down_to_power_of2() {
+        assert_eq!(round_down_to_power_of2(0), 1);
+        assert_eq!(round_down_to_power_of2(1), 1);
+        assert_eq!(round_down_to_power_of2(2), 2);
+        assert_eq!(round_down_to_power_of2(3), 2);
+        assert_eq!(round_down_to_power_of2(4), 4);
+        assert_eq!(round_down_to_power_of2(5), 4);
+        assert_eq!(round_down_to_power_of2(8), 8);
+        assert_eq!(round_down_to_power_of2(15), 8);
+        assert_eq!(round_down_to_power_of2(1025), 1024);
     }
 
     #[test]
-    fn test_calcTotalArcs() {
-        assert_eq!(calcTotalArcs(0), 6);
-        assert_eq!(calcTotalArcs(1), 6);
-        assert_eq!(calcTotalArcs(2), 12);
-        assert_eq!(calcTotalArcs(3), 12);
-        assert_eq!(calcTotalArcs(4), 24);
-        assert_eq!(calcTotalArcs(5), 24);
-        assert_eq!(calcTotalArcs(6), 24);
-        assert_eq!(calcTotalArcs(7), 24);
-        assert_eq!(calcTotalArcs(8), 48);
-        assert_eq!(calcTotalArcs(9), 48);
-        assert_eq!(calcTotalArcs(10), 48);
+    fn test_calc_total_arcs() {
+        assert_eq!(calc_total_arcs(0), 6);
+        assert_eq!(calc_total_arcs(1), 6);
+        assert_eq!(calc_total_arcs(2), 12);
+        assert_eq!(calc_total_arcs(3), 12);
+        assert_eq!(calc_total_arcs(4), 24);
+        assert_eq!(calc_total_arcs(5), 24);
+        assert_eq!(calc_total_arcs(6), 24);
+        assert_eq!(calc_total_arcs(7), 24);
+        assert_eq!(calc_total_arcs(8), 48);
+        assert_eq!(calc_total_arcs(9), 48);
+        assert_eq!(calc_total_arcs(10), 48);
     }
 }
