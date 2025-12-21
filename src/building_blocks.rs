@@ -35,6 +35,21 @@ impl CircleCoordinate {
         let angle = calc_angle_step(circle) * Fraction::from(arc_index);
         Self::new(circle, arc_index, angle)
     }
+
+    pub fn create_with_fraction(circle: usize, angle: Fraction) -> Result<Self, String> {
+        let step = calc_angle_step(circle);
+        let arc_index_fraction = angle / step;
+
+        if *arc_index_fraction.denom().unwrap() != 1 {
+            return Err(format!(
+                "no such angle for circle. {}, angle: {}",
+                circle, angle
+            ));
+        }
+
+        let arc_index = *arc_index_fraction.numer().unwrap() as usize;
+        Self::new(circle, arc_index, angle)
+    }
 }
 
 fn round_down_to_power_of2(n: usize) -> usize {
