@@ -7,6 +7,8 @@ const ANGLE_FULL_CIRCLE: usize = 360;
 // (The angle for which the length of the arc equals the radius is 1 rad ~ 57.3 degrees.)
 const ANGLE_STEP_FIRST_CIRCLE: usize = 60;
 
+const ARCS_FIRST_CIRCLE: usize = ANGLE_FULL_CIRCLE / ANGLE_STEP_FIRST_CIRCLE;
+
 pub struct CircleCoordinate {
     circle: usize,
     arc_index: usize,
@@ -29,6 +31,10 @@ fn roundDownToPowerOf2(n: usize) -> usize {
     }
     let msb_pos = usize::BITS - 1 - n.leading_zeros();
     1 << msb_pos
+}
+
+fn calcTotalArcs(circle: usize) -> usize {
+    roundDownToPowerOf2(circle) * ARCS_FIRST_CIRCLE
 }
 
 #[cfg(test)]
