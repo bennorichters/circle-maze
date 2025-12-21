@@ -30,6 +30,11 @@ impl CircleCoordinate {
             })
         }
     }
+
+    pub fn create_with_arc_index(circle: usize, arc_index: usize) -> Result<Self, String> {
+        let angle = calc_angle_step(circle) * Fraction::from(arc_index);
+        Self::new(circle, arc_index, angle)
+    }
 }
 
 fn round_down_to_power_of2(n: usize) -> usize {
@@ -42,6 +47,10 @@ fn round_down_to_power_of2(n: usize) -> usize {
 
 fn calc_total_arcs(circle: usize) -> usize {
     round_down_to_power_of2(circle) * ARCS_FIRST_CIRCLE
+}
+
+fn calc_angle_step(circle: usize) -> Fraction {
+    Fraction::from(ANGLE_FULL_CIRCLE) / Fraction::from(calc_total_arcs(circle))
 }
 
 #[cfg(test)]
