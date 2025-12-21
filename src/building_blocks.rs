@@ -102,11 +102,22 @@ mod tests {
 
     #[test]
     fn test_create_with_arc_index() {
-        assert!(CircleCoordinate::create_with_arc_index(0, 0).is_ok());
-        assert!(CircleCoordinate::create_with_arc_index(0, 1).is_ok());
-        assert!(CircleCoordinate::create_with_arc_index(0, 2).is_ok());
-        assert!(CircleCoordinate::create_with_arc_index(0, 3).is_ok());
-        assert!(CircleCoordinate::create_with_arc_index(0, 4).is_ok());
-        assert!(CircleCoordinate::create_with_arc_index(0, 5).is_ok());
+        let coord0 = CircleCoordinate::create_with_arc_index(0, 0).unwrap();
+        assert_eq!(coord0.angle, Fraction::from(0));
+
+        let coord1 = CircleCoordinate::create_with_arc_index(0, 1).unwrap();
+        assert_eq!(coord1.angle, Fraction::from(60));
+
+        let coord2 = CircleCoordinate::create_with_arc_index(0, 2).unwrap();
+        assert_eq!(coord2.angle, Fraction::from(120));
+
+        let coord3 = CircleCoordinate::create_with_arc_index(0, 3).unwrap();
+        assert_eq!(coord3.angle, Fraction::from(180));
+
+        let coord4 = CircleCoordinate::create_with_arc_index(0, 4).unwrap();
+        assert_eq!(coord4.angle, Fraction::from(240));
+
+        let coord5 = CircleCoordinate::create_with_arc_index(0, 5).unwrap();
+        assert_eq!(coord5.angle, Fraction::from(300));
     }
 }
