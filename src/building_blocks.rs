@@ -15,3 +15,11 @@ impl CircleCoordinate {
         }
     }
 }
+
+pub fn roundDownToPowerOf2(n: usize) -> usize {
+    if n == 0 {
+        return 0;
+    }
+    let msb_pos = usize::BITS - 1 - n.leading_zeros();
+    1 << msb_pos
+}
