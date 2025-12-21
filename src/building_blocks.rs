@@ -53,4 +53,19 @@ mod tests {
         assert_eq!(roundDownToPowerOf2(15), 8);
         assert_eq!(roundDownToPowerOf2(1025), 1024);
     }
+
+    #[test]
+    fn test_calcTotalArcs() {
+        assert_eq!(calcTotalArcs(0), 0);
+        assert_eq!(calcTotalArcs(1), 6);
+        assert_eq!(calcTotalArcs(2), 12);
+        assert_eq!(calcTotalArcs(3), 12);
+        assert_eq!(calcTotalArcs(4), 24);
+        assert_eq!(calcTotalArcs(5), 24);
+        assert_eq!(calcTotalArcs(6), 24);
+        assert_eq!(calcTotalArcs(7), 24);
+        assert_eq!(calcTotalArcs(8), 48);
+        assert_eq!(calcTotalArcs(9), 48);
+        assert_eq!(calcTotalArcs(10), 48);
+    }
 }
