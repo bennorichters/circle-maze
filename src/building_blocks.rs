@@ -27,7 +27,7 @@ impl CircleCoordinate {
 
 fn roundDownToPowerOf2(n: usize) -> usize {
     if n == 0 {
-        return 0;
+        return 1;
     }
     let msb_pos = usize::BITS - 1 - n.leading_zeros();
     1 << msb_pos
@@ -43,7 +43,7 @@ mod tests {
 
     #[test]
     fn test_roundDownToPowerOf2() {
-        assert_eq!(roundDownToPowerOf2(0), 0);
+        assert_eq!(roundDownToPowerOf2(0), 1);
         assert_eq!(roundDownToPowerOf2(1), 1);
         assert_eq!(roundDownToPowerOf2(2), 2);
         assert_eq!(roundDownToPowerOf2(3), 2);
@@ -56,7 +56,7 @@ mod tests {
 
     #[test]
     fn test_calcTotalArcs() {
-        assert_eq!(calcTotalArcs(0), 0);
+        assert_eq!(calcTotalArcs(0), 6);
         assert_eq!(calcTotalArcs(1), 6);
         assert_eq!(calcTotalArcs(2), 12);
         assert_eq!(calcTotalArcs(3), 12);
