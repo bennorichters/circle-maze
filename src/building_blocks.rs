@@ -137,5 +137,8 @@ mod tests {
 
         let coord5_c1 = CircleCoordinate::create_with_arc_index(1, 5).unwrap();
         assert_eq!(coord5_c1.angle, Fraction::from(300));
+
+        let coord1_c10 = CircleCoordinate::create_with_arc_index(10, 1).unwrap();
+        assert_eq!(coord1_c10.angle, Fraction::new(360u64, 48u64));
     }
 }
