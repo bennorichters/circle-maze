@@ -119,5 +119,23 @@ mod tests {
 
         let coord5 = CircleCoordinate::create_with_arc_index(0, 5).unwrap();
         assert_eq!(coord5.angle, Fraction::from(300));
+
+        let coord0_c1 = CircleCoordinate::create_with_arc_index(1, 0).unwrap();
+        assert_eq!(coord0_c1.angle, Fraction::from(0));
+
+        let coord1_c1 = CircleCoordinate::create_with_arc_index(1, 1).unwrap();
+        assert_eq!(coord1_c1.angle, Fraction::from(60));
+
+        let coord2_c1 = CircleCoordinate::create_with_arc_index(1, 2).unwrap();
+        assert_eq!(coord2_c1.angle, Fraction::from(120));
+
+        let coord3_c1 = CircleCoordinate::create_with_arc_index(1, 3).unwrap();
+        assert_eq!(coord3_c1.angle, Fraction::from(180));
+
+        let coord4_c1 = CircleCoordinate::create_with_arc_index(1, 4).unwrap();
+        assert_eq!(coord4_c1.angle, Fraction::from(240));
+
+        let coord5_c1 = CircleCoordinate::create_with_arc_index(1, 5).unwrap();
+        assert_eq!(coord5_c1.angle, Fraction::from(300));
     }
 }
