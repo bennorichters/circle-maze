@@ -99,4 +99,14 @@ mod tests {
         assert_eq!(calc_total_arcs(9), 48);
         assert_eq!(calc_total_arcs(10), 48);
     }
+
+    #[test]
+    fn test_create_with_arc_index() {
+        assert!(CircleCoordinate::create_with_arc_index(0, 0).is_ok());
+        assert!(CircleCoordinate::create_with_arc_index(0, 1).is_ok());
+        assert!(CircleCoordinate::create_with_arc_index(0, 2).is_ok());
+        assert!(CircleCoordinate::create_with_arc_index(0, 3).is_ok());
+        assert!(CircleCoordinate::create_with_arc_index(0, 4).is_ok());
+        assert!(CircleCoordinate::create_with_arc_index(0, 5).is_ok());
+    }
 }
