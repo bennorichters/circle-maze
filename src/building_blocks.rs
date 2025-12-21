@@ -18,16 +18,17 @@ pub struct CircleCoordinate {
 impl CircleCoordinate {
     pub fn new(circle: usize, arc_index: usize, angle: Fraction) -> Result<Self, String> {
         if arc_index > (calcTotalArcs(circle) - 1) {
-            return Err(format!(
+            Err(format!(
                 "arcIndex too big for {}, arcIndex: {}",
                 circle, arc_index
-            ));
+            ))
+        } else {
+            Ok(CircleCoordinate {
+                circle,
+                arc_index,
+                angle,
+            })
         }
-        Ok(CircleCoordinate {
-            circle,
-            arc_index,
-            angle,
-        })
     }
 }
 
