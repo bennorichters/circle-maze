@@ -23,3 +23,21 @@ fn roundDownToPowerOf2(n: usize) -> usize {
     let msb_pos = usize::BITS - 1 - n.leading_zeros();
     1 << msb_pos
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_roundDownToPowerOf2() {
+        assert_eq!(roundDownToPowerOf2(0), 0);
+        assert_eq!(roundDownToPowerOf2(1), 1);
+        assert_eq!(roundDownToPowerOf2(2), 2);
+        assert_eq!(roundDownToPowerOf2(3), 2);
+        assert_eq!(roundDownToPowerOf2(4), 4);
+        assert_eq!(roundDownToPowerOf2(5), 4);
+        assert_eq!(roundDownToPowerOf2(8), 8);
+        assert_eq!(roundDownToPowerOf2(15), 8);
+        assert_eq!(roundDownToPowerOf2(1025), 1024);
+    }
+}

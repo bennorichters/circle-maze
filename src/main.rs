@@ -1,3 +1,5 @@
+mod building_blocks;
+
 use fraction::Fraction;
 
 fn main() {
