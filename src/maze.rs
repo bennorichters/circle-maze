@@ -8,6 +8,12 @@ pub struct Maze {
     lines: Vec<CircleCoordinate>,
 }
 
+impl Maze {
+    pub fn circles(&self) -> usize {
+        self.circles
+    }
+}
+
 pub struct MazeFactory {
     circles: usize,
     ars: Vec<CircleCoordinate>,
