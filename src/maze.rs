@@ -21,7 +21,9 @@ impl MazeFactory {
 }
 
 fn all_coords(circle: usize) -> Vec<CircleCoordinate> {
-    todo!()
+    (1..=circle)
+        .flat_map(|c| coordinates_for_circle(c))
+        .collect()
 }
 
 fn coordinates_for_circle(circle: usize) -> Vec<CircleCoordinate> {
