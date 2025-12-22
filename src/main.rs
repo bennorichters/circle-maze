@@ -1,15 +1,11 @@
-mod building_blocks;
+#![allow(dead_code)]
 
-use fraction::Fraction;
+use crate::maze::MazeFactory;
+
+mod building_blocks;
+mod maze;
 
 fn main() {
-    // Create fractions 5/6 and 1/13
-    let fraction1 = Fraction::new(5u32, 6u32);
-    let fraction2 = Fraction::new(1u32, 13u32);
-
-    // Calculate the sum
-    let sum = fraction1 + fraction2;
-
-    // Output the result to the console
-    println!("5/6 + 1/13 = {}", sum);
+    let maze = MazeFactory::create(5);
+    println!("Maze: {:?}", maze);
 }

@@ -9,6 +9,7 @@ const ANGULAR_DIVISOR_FIRST_CIRCLE: usize = 60;
 
 const ARCS_FIRST_CIRCLE: usize = ANGLE_FULL_CIRCLE / ANGULAR_DIVISOR_FIRST_CIRCLE;
 
+#[derive(Debug)]
 pub struct CircleCoordinate {
     circle: usize,
     arc_index: usize,
@@ -52,16 +53,16 @@ impl CircleCoordinate {
     }
 }
 
+pub fn calc_total_arcs(circle: usize) -> usize {
+    round_down_to_power_of2(circle) * ARCS_FIRST_CIRCLE
+}
+
 fn round_down_to_power_of2(n: usize) -> usize {
     if n == 0 {
         return 1;
     }
     let msb_pos = usize::BITS - 1 - n.leading_zeros();
     1 << msb_pos
-}
-
-fn calc_total_arcs(circle: usize) -> usize {
-    round_down_to_power_of2(circle) * ARCS_FIRST_CIRCLE
 }
 
 fn calc_angle_step(circle: usize) -> Fraction {
