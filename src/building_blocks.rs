@@ -172,4 +172,85 @@ mod tests {
         let coord5 = CircleCoordinate::create_with_fraction(0, Fraction::from(300)).unwrap();
         assert_eq!(coord5.arc_index, 5);
     }
+
+    #[test]
+    fn test_next_clockwise() {
+        // Test normal increment on circle 0 (6 arcs total)
+        let coord0 = CircleCoordinate::create_with_arc_index(0, 0).unwrap();
+        let next = coord0.next_clockwise().unwrap();
+        assert_eq!(next.circle, 0);
+        assert_eq!(next.arc_index, 1);
+        assert_eq!(next.angle, Fraction::from(60));
+
+        let coord1 = CircleCoordinate::create_with_arc_index(0, 1).unwrap();
+        let next = coord1.next_clockwise().unwrap();
+        assert_eq!(next.circle, 0);
+        assert_eq!(next.arc_index, 2);
+        assert_eq!(next.angle, Fraction::from(120));
+
+        // Test wrapping on circle 0 (last arc_index 5 -> 0)
+        let coord5 = CircleCoordinate::create_with_arc_index(0, 5).unwrap();
+        let next = coord5.next_clockwise().unwrap();
+        assert_eq!(next.circle, 0);
+        assert_eq!(next.arc_index, 0);
+        assert_eq!(next.angle, Fraction::from(0));
+
+        // Test on circle 2 (12 arcs total)
+        let coord2_0 = CircleCoordinate::create_with_arc_index(2, 0).unwrap();
+        let next = coord2_0.next_clockwise().unwrap();
+        assert_eq!(next.circle, 2);
+        assert_eq!(next.arc_index, 1);
+        assert_eq!(next.angle, Fraction::from(30));
+
+        // Test wrapping on circle 2 (last arc_index 11 -> 0)
+        let coord2_11 = CircleCoordinate::create_with_arc_index(2, 11).unwrap();
+        let next = coord2_11.next_clockwise().unwrap();
+        assert_eq!(next.circle, 2);
+        assert_eq!(next.arc_index, 0);
+        assert_eq!(next.angle, Fraction::from(0));
+
+        // Test on circle 4 (24 arcs total)
+        let coord4_23 = CircleCoordinate::create_with_arc_index(4, 23).unwrap();
+        let next = coord4_23.next_clockwise().unwrap();
+        assert_eq!(next.circle, 4);
+        assert_eq!(next.arc_index, 0);
+        assert_eq!(next.angle, Fraction::from(0));
+    }
+
+    #[test]
+    fn test_next_out() {
+        // Test circle increments and angle stays same
+        let coord0_0 = CircleCoordinate::create_with_arc_index(0, 0).unwrap();
+        let next = coord0_0.next_out().unwrap();
+        assert_eq!(next.circle, 1);
+        assert_eq!(next.arc_index, 0);
+        assert_eq!(next.angle, Fraction::from(0));
+
+        let coord0_1 = CircleCoordinate::create_with_arc_index(0, 1).unwrap();
+        let next = coord0_1.next_out().unwrap();
+        assert_eq!(next.circle, 1);
+        assert_eq!(next.angle, Fraction::from(60));
+        assert_eq!(next.arc_index, 1);
+
+        // Test moving from circle 1 to circle 2 (6 arcs -> 12 arcs)
+        let coord1_1 = CircleCoordinate::create_with_arc_index(1, 1).unwrap();
+        let next = coord1_1.next_out().unwrap();
+        assert_eq!(next.circle, 2);
+        assert_eq!(next.angle, Fraction::from(60));
+        assert_eq!(next.arc_index, 2); // angle 60 at circle 2 (step=30) is arc_index 2
+
+        // Test angle preservation when moving to circle with more arcs
+        let coord2_4 = CircleCoordinate::create_with_arc_index(2, 4).unwrap(); // angle 120
+        let next = coord2_4.next_out().unwrap();
+        assert_eq!(next.circle, 3);
+        assert_eq!(next.angle, Fraction::from(120));
+        assert_eq!(next.arc_index, 4);
+
+        // Test with circle 3 to circle 4 (12 arcs -> 24 arcs)
+        let coord3_3 = CircleCoordinate::create_with_arc_index(3, 3).unwrap(); // angle 90
+        let next = coord3_3.next_out().unwrap();
+        assert_eq!(next.circle, 4);
+        assert_eq!(next.angle, Fraction::from(90));
+        assert_eq!(next.arc_index, 6); // angle 90 at circle 4 (step=15) is arc_index 6
+    }
 }
