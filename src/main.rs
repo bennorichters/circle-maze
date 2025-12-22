@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use crate::maze::MazeFactory;
+use crate::{maze::MazeFactory, svg::render};
 
 mod building_blocks;
 mod maze;
@@ -8,5 +8,6 @@ mod svg;
 
 fn main() {
     let maze = MazeFactory::create(5);
-    println!("Maze: {:?}", maze);
+
+    let _ = render(&maze);
 }

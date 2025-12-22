@@ -4,7 +4,7 @@ use serde_json::Value;
 #[derive(Debug)]
 pub struct Maze {
     circles: usize,
-    ars: Vec<CircleCoordinate>,
+    arcs: Vec<CircleCoordinate>,
     lines: Vec<CircleCoordinate>,
 }
 
@@ -16,7 +16,7 @@ impl Maze {
 
 pub struct MazeFactory {
     circles: usize,
-    ars: Vec<CircleCoordinate>,
+    arcs: Vec<CircleCoordinate>,
     lines: Vec<CircleCoordinate>,
     free: Vec<CircleCoordinate>,
 }
@@ -25,14 +25,18 @@ impl MazeFactory {
     pub fn new(circles: usize) -> Self {
         Self {
             circles,
-            ars: Vec::new(),
+            arcs: Vec::new(),
             lines: Vec::new(),
             free: all_coords(circles),
         }
     }
 
     pub fn create(circles: usize) -> Maze {
-        todo!()
+        Maze {
+            circles,
+            arcs: vec!(),
+            lines: vec!(),
+        }
     }
 }
 
@@ -70,7 +74,7 @@ impl MazeDeserializer {
             .ok_or("'arcs' must be an array")?;
 
         // Parse arcs array
-        let mut ars = Vec::new();
+        let mut arcs = Vec::new();
         for (i, arc_obj) in arcs_array.iter().enumerate() {
             let arc_map = arc_obj.as_object()
                 .ok_or(format!("arcs[{}] must be an object", i))?;
@@ -88,7 +92,7 @@ impl MazeDeserializer {
             let coord = CircleCoordinate::create_with_arc_index(circle, arc)
                 .map_err(|e| format!("Invalid arc coordinate at arcs[{}]: {}", i, e))?;
 
-            ars.push(coord);
+            arcs.push(coord);
         }
 
         // Extract and validate 'lines' field
@@ -121,7 +125,7 @@ impl MazeDeserializer {
 
         Ok(Maze {
             circles,
-            ars,
+            arcs,
             lines,
         })
     }
