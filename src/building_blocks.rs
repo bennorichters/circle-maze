@@ -56,6 +56,10 @@ impl CircleCoordinate {
         let next_arc_index = (self.arc_index + 1) % calc_total_arcs(self.circle);
         Self::create_with_arc_index(self.circle, next_arc_index)
     }
+
+    pub fn next_out(&self) -> Result<Self, String> {
+        Self::create_with_fraction(self.circle + 1, self.angle)
+    }
 }
 
 pub fn calc_total_arcs(circle: usize) -> usize {
