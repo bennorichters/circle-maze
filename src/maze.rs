@@ -15,6 +15,15 @@ pub struct MazeFactory {
 }
 
 impl MazeFactory {
+    pub fn new(circles: usize) -> Self {
+        Self {
+            circles,
+            ars: Vec::new(),
+            lines: Vec::new(),
+            free: all_coords(circles),
+        }
+    }
+
     pub fn create(circles: usize) -> Maze {
         todo!()
     }
