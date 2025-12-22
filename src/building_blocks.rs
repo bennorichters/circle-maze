@@ -51,6 +51,11 @@ impl CircleCoordinate {
         let arc_index = *arc_index_fraction.numer().unwrap() as usize;
         Self::new(circle, arc_index, angle)
     }
+
+    pub fn next_clockwise(&self) -> Result<Self, String> {
+        let next_arc_index = (self.arc_index + 1) % calc_total_arcs(self.circle);
+        Self::create_with_arc_index(self.circle, next_arc_index)
+    }
 }
 
 pub fn calc_total_arcs(circle: usize) -> usize {
