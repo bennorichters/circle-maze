@@ -130,3 +130,56 @@ impl MazeDeserializer {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_deserialize_maze_with_three_circles() {
+        let json_data = json!({
+            "circles": 3,
+            "arcs": [
+                {"circle": 1, "arc": 1},
+                {"circle": 1, "arc": 3},
+                {"circle": 1, "arc": 5},
+                {"circle": 2, "arc": 2},
+                {"circle": 2, "arc": 4},
+                {"circle": 2, "arc": 6},
+                {"circle": 2, "arc": 8},
+                {"circle": 2, "arc": 9},
+                {"circle": 2, "arc": 10},
+                {"circle": 3, "arc": 0},
+                {"circle": 3, "arc": 1},
+                {"circle": 3, "arc": 2},
+                {"circle": 3, "arc": 3},
+                {"circle": 3, "arc": 4},
+                {"circle": 3, "arc": 5},
+                {"circle": 3, "arc": 6},
+                {"circle": 3, "arc": 7},
+                {"circle": 3, "arc": 8},
+                {"circle": 3, "arc": 9},
+                {"circle": 3, "arc": 10},
+                {"circle": 3, "arc": 11}
+            ],
+            "lines": [
+                {"circle": 1, "arc": 0},
+                {"circle": 1, "arc": 1},
+                {"circle": 1, "arc": 2},
+                {"circle": 1, "arc": 3},
+                {"circle": 1, "arc": 4},
+                {"circle": 2, "arc": 0},
+                {"circle": 2, "arc": 1},
+                {"circle": 2, "arc": 3},
+                {"circle": 2, "arc": 10}
+            ]
+        });
+
+        let result = MazeDeserializer::deserialize(json_data);
+
+        assert!(result.is_ok(), "Deserialization should succeed");
+        let maze = result.unwrap();
+        assert_eq!(maze.circles(), 3, "Maze should have 3 circles");
+    }
+}
