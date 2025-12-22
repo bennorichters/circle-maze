@@ -1,4 +1,5 @@
 use crate::building_blocks::{CircleCoordinate, calc_total_arcs};
+use serde_json::Value;
 
 #[derive(Debug)]
 pub struct Maze {
@@ -40,4 +41,12 @@ fn coordinates_for_circle(circle: usize) -> Vec<CircleCoordinate> {
     (0..total)
         .map(|i| CircleCoordinate::create_with_arc_index(circle, i).unwrap())
         .collect()
+}
+
+pub struct MazeDeserializer;
+
+impl MazeDeserializer {
+    pub fn deserialize(data: Value) -> Maze {
+        todo!()
+    }
 }
