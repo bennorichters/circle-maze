@@ -38,20 +38,27 @@ fn render_arcs(maze: &Maze) -> String {
     let merged_arcs = merge_arcs(maze);
 
     for (start, end) in merged_arcs {
-        let start_angle = start.angle();
-        let end_angle = end.angle();
         let radius = start.circle() * 10;
 
-        let (start_x, start_y) = polar_to_cartesian(radius, start_angle);
-        let (end_x, end_y) = polar_to_cartesian(radius, end_angle);
-
-        let large_arc = if start == end { 1 } else { 0 };
-
-        content.push_str(&format!(
-            r#"  <path d="M {:.2},{:.2} A {},{} 0 {} 1 {:.2},{:.2}"/>
+        if start == end {
+            content.push_str(&format!(
+                r#"  <circle cx="0" cy="0" r="{}"/>
 "#,
-            start_x, start_y, radius, radius, large_arc, end_x, end_y
-        ));
+                radius
+            ));
+        } else {
+            let start_angle = start.angle();
+            let end_angle = end.angle();
+
+            let (start_x, start_y) = polar_to_cartesian(radius, start_angle);
+            let (end_x, end_y) = polar_to_cartesian(radius, end_angle);
+
+            content.push_str(&format!(
+                r#"  <path d="M {:.2},{:.2} A {},{} 0 0 1 {:.2},{:.2}"/>
+"#,
+                start_x, start_y, radius, radius, end_x, end_y
+            ));
+        }
     }
 
     content
