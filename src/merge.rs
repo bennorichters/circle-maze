@@ -38,6 +38,10 @@ pub fn merge_lines(maze: Maze) -> Vec<(CircleCoordinate, CircleCoordinate)> {
     result
 }
 
+pub fn merge_arcs(maze: Maze) -> Vec<(CircleCoordinate, CircleCoordinate)> {
+    todo!()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
