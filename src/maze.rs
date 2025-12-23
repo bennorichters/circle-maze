@@ -27,8 +27,9 @@ impl Maze {
 fn factory(circles: usize) -> Maze {
     let outer = calc_total_arcs(circles);
     let total = outer * circles;
-    let mut used: Vec<u8> = vec![0; total];
-    used[(total - outer)..].fill(1);
+    let mut path: Vec<bool> = vec![false; total];
+    let mut used: Vec<bool> = vec![false; total];
+    used[(total - outer)..].fill(true);
 
     let mut free: Vec<(usize, usize)> = vec![];
     for c in 0..(circles - 2) {
@@ -39,24 +40,61 @@ fn factory(circles: usize) -> Maze {
     }
     free.shuffle(&mut rng());
 
+    let mut lines: Vec<CircleCoordinate> = vec![];
+    let mut arcs: Vec<CircleCoordinate> = vec![];
     for f in free {
-        let used_index = f.0 * outer + f.1;
-        if used[used_index] != 0 {
+        if used[f.0 * outer + f.1] {
             continue;
         }
 
-        // let mut _path = vec![f];
-        let mut options: Vec<(usize, usize, u8)> =
-            vec![(f.0, f.1, 0), (f.0, f.1, 1), (f.0, f.1, 2), (f.0, f.1, 3)];
+        path.fill(false);
 
+        let mut coord = CircleCoordinate::create_with_arc_index(f.0, f.1);
+        let mut options: Vec<(usize, usize, bool)> = vec![(f.0, f.1, false), (f.0, f.1, true)];
+        let mut index = f.0 * outer + f.1;
         loop {
-            let opt_index = rand::rng().random_range(0..options.len());
-            let _opt = options.swap_remove(opt_index);
+            path[index] = true;
+            used[index] = true;
 
+            let mut opt: (usize, usize, bool);
+            let mut next: CircleCoordinate;
+            loop {
+                let opt_index = rand::rng().random_range(0..options.len());
+                opt = options.swap_remove(opt_index);
+
+                next = if opt.2 {
+                    coord.next_out().unwrap()
+                } else {
+                    coord.next_clockwise().unwrap()
+                };
+                index = coord.circle() * outer + coord.arc_index();
+
+                if !path[index] {
+                    break;
+                }
+            }
+
+            if opt.2 {
+                lines.push(coord);
+            } else {
+                arcs.push(coord);
+            }
+
+            if used[index] {
+                break;
+            }
+
+            coord = next;
+            options.push((coord.circle(), coord.arc_index(), false));
+            options.push((coord.circle(), coord.arc_index(), true));
         }
     }
 
-    todo!()
+    Maze {
+        circles,
+        arcs,
+        lines,
+    }
 }
 
 fn all_coords(circle: usize) -> Vec<CircleCoordinate> {

@@ -74,6 +74,10 @@ impl CircleCoordinate {
     pub fn circle(&self) -> usize {
         self.circle
     }
+
+    pub fn arc_index(&self) -> usize {
+        self.arc_index
+    }
 }
 
 pub fn calc_total_arcs(circle: usize) -> usize {
