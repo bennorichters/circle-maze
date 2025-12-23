@@ -57,7 +57,7 @@ fn all_coords(circle: usize) -> Vec<CircleCoordinate> {
 fn coordinates_for_circle(circle: usize) -> Vec<CircleCoordinate> {
     let total = calc_total_arcs(circle);
     (0..total)
-        .map(|i| CircleCoordinate::create_with_arc_index(circle, i).unwrap())
+        .map(|i| CircleCoordinate::create_with_arc_index(circle, i))
         .collect()
 }
 
@@ -97,9 +97,7 @@ impl MazeDeserializer {
                 .as_u64()
                 .ok_or(format!("arcs[{}].arc must be a number", i))? as usize;
 
-            let coord = CircleCoordinate::create_with_arc_index(circle, arc)
-                .map_err(|e| format!("Invalid arc coordinate at arcs[{}]: {}", i, e))?;
-
+            let coord = CircleCoordinate::create_with_arc_index(circle, arc);
             arcs.push(coord);
         }
 
@@ -125,9 +123,7 @@ impl MazeDeserializer {
                 .as_u64()
                 .ok_or(format!("lines[{}].arc must be a number", i))? as usize;
 
-            let coord = CircleCoordinate::create_with_arc_index(circle, arc)
-                .map_err(|e| format!("Invalid line coordinate at lines[{}]: {}", i, e))?;
-
+            let coord = CircleCoordinate::create_with_arc_index(circle, arc);
             lines.push(coord);
         }
 
