@@ -38,7 +38,39 @@ pub fn merge_lines(maze: Maze) -> Vec<(CircleCoordinate, CircleCoordinate)> {
 }
 
 pub fn merge_arcs(maze: Maze) -> Vec<(CircleCoordinate, CircleCoordinate)> {
-    todo!()
+    let mut result: Vec<(CircleCoordinate, CircleCoordinate)> = Vec::new();
+
+    for arc in maze.arcs().iter() {
+        let start = arc.clone();
+        let end = arc.next_clockwise().expect("Failed to create next coordinate");
+
+        let start_match = result.iter().position(|(_, e)| e == &start);
+        let end_match = result.iter().position(|(s, _)| s == &end);
+
+        match (start_match, end_match) {
+            (Some(i), Some(j)) if i == j => {
+                result[i].1 = end;
+            }
+            (Some(i), Some(j)) => {
+                let merged_tuple = (result[i].0.clone(), result[j].1.clone());
+                let (first, second) = if i < j { (i, j) } else { (j, i) };
+                result.remove(second);
+                result.remove(first);
+                result.push(merged_tuple);
+            }
+            (Some(i), None) => {
+                result[i].1 = end;
+            }
+            (None, Some(j)) => {
+                result[j].0 = start;
+            }
+            (None, None) => {
+                result.push((start, end));
+            }
+        }
+    }
+
+    result
 }
 
 #[cfg(test)]
