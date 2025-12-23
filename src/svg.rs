@@ -13,6 +13,7 @@ pub fn render(maze: &Maze) -> std::io::Result<()> {
     svg_content.push_str(&format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="{} {} {} {}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" shape-rendering="geometricPrecision">
+<g fill="none" stroke="black" stroke-width="1" stroke-linecap="round">
 "#,
         -(view_size as i32) / 2,
         -(view_size as i32) / 2,
@@ -23,7 +24,7 @@ pub fn render(maze: &Maze) -> std::io::Result<()> {
     svg_content.push_str(&render_arcs(maze));
     svg_content.push_str(&render_lines(maze));
 
-    svg_content.push_str("</svg>\n");
+    svg_content.push_str("</g></svg>\n");
 
     let mut file = File::create("maze.svg")?;
     file.write_all(svg_content.as_bytes())?;
@@ -45,7 +46,7 @@ fn render_arcs(maze: &Maze) -> String {
         let (end_x, end_y) = polar_to_cartesian(radius, end_angle);
 
         content.push_str(&format!(
-            r#"  <path d="M {:.2},{:.2} A {},{} 0 0 1 {:.2},{:.2}" fill="none" stroke="black" stroke-width="1" stroke-linecap="round"/>
+            r#"  <path d="M {:.2},{:.2} A {},{} 0 0 1 {:.2},{:.2}"/>
 "#,
             start_x, start_y, radius, radius, end_x, end_y
         ));
@@ -69,7 +70,7 @@ fn render_lines(maze: &Maze) -> String {
         let (end_x, end_y) = polar_to_cartesian(end_radius, end_angle);
 
         content.push_str(&format!(
-            r#"  <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="black" stroke-width="1" stroke-linecap="round"/>
+            r#"  <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>
 "#,
             start_x, start_y, end_x, end_y
         ));
