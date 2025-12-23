@@ -1,6 +1,5 @@
 use crate::building_blocks::{CircleCoordinate, calc_total_arcs};
-use rand::Rng;
-use rand::{rng, seq::SliceRandom};
+use rand::{rng, seq::SliceRandom, Rng};
 use serde_json::Value;
 
 #[derive(Debug)]
@@ -32,7 +31,7 @@ pub fn factory(circles: usize) -> Maze {
     used[(total - outer)..].fill(true);
 
     let mut free: Vec<(usize, usize)> = vec![];
-    for c in 0..(circles - 2) {
+    for c in 1..circles {
         let t = calc_total_arcs(c);
         for arc_index in 0..t {
             free.push((c, arc_index));
@@ -43,7 +42,7 @@ pub fn factory(circles: usize) -> Maze {
     let mut lines: Vec<CircleCoordinate> = vec![];
     let mut arcs: Vec<CircleCoordinate> = vec![];
     for f in free {
-        if used[f.0 * outer + f.1] {
+        if used[(f.0 - 1) * outer + f.1] {
             continue;
         }
 
@@ -51,7 +50,7 @@ pub fn factory(circles: usize) -> Maze {
 
         let mut coord = CircleCoordinate::create_with_arc_index(f.0, f.1);
         let mut options: Vec<(usize, usize, bool)> = vec![(f.0, f.1, false), (f.0, f.1, true)];
-        let mut index = f.0 * outer + f.1;
+        let mut index = (f.0 - 1) * outer + f.1;
         loop {
             path[index] = true;
             used[index] = true;
@@ -67,7 +66,7 @@ pub fn factory(circles: usize) -> Maze {
                 } else {
                     coord.next_clockwise().unwrap()
                 };
-                index = coord.circle() * outer + coord.arc_index();
+                index = (next.circle() - 1) * outer + next.arc_index();
 
                 if !path[index] {
                     break;
@@ -88,6 +87,10 @@ pub fn factory(circles: usize) -> Maze {
             options.push((coord.circle(), coord.arc_index(), false));
             options.push((coord.circle(), coord.arc_index(), true));
         }
+    }
+
+    for i in 0..outer {
+        arcs.push(CircleCoordinate::create_with_arc_index(circles, i));
     }
 
     Maze {
