@@ -24,7 +24,7 @@ impl Maze {
     }
 }
 
-fn factory(circles: usize) -> Maze {
+pub fn factory(circles: usize) -> Maze {
     let outer = calc_total_arcs(circles);
     let total = outer * circles;
     let mut path: Vec<bool> = vec![false; total];
