@@ -50,7 +50,7 @@ fn render_arcs(maze: &Maze) -> String {
         let end_y = radius as f64 * end_angle_rad.sin();
 
         content.push_str(&format!(
-            r#"  <path d="M {},{} A {},{} 0 0 1 {},{}" fill="none" stroke="black" stroke-width="1"/>
+            r#"  <path d="M {:.2},{:.2} A {},{} 0 0 1 {:.2},{:.2}" fill="none" stroke="black" stroke-width="1"/>
 "#,
             start_x, start_y, radius, radius, end_x, end_y
         ));
@@ -79,7 +79,7 @@ fn render_lines(maze: &Maze) -> String {
         let end_y = end_radius as f64 * end_angle_rad.sin();
 
         content.push_str(&format!(
-            r#"  <line x1="{}" y1="{}" x2="{}" y2="{}" stroke="black" stroke-width="1"/>
+            r#"  <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="black" stroke-width="1"/>
 "#,
             start_x, start_y, end_x, end_y
         ));
