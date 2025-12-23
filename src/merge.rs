@@ -1,19 +1,30 @@
 use crate::building_blocks::CircleCoordinate;
 use crate::maze::Maze;
 
-pub fn merge_lines(maze: Maze) -> Vec<(CircleCoordinate, CircleCoordinate)> {
+fn merge_coordinates<F>(
+    coordinates: &[CircleCoordinate],
+    get_next: F,
+    allow_closed: bool,
+) -> Vec<(CircleCoordinate, CircleCoordinate)>
+where
+    F: Fn(&CircleCoordinate) -> Result<CircleCoordinate, String>,
+{
     let mut result: Vec<(CircleCoordinate, CircleCoordinate)> = Vec::new();
 
-    for line in maze.lines().iter() {
-        let start = line.clone();
-        let end = line.next_out().expect("Failed to create next coordinate");
+    for coord in coordinates.iter() {
+        let start = coord.clone();
+        let end = get_next(coord).expect("Failed to create next coordinate");
 
         let start_match = result.iter().position(|(_, e)| e == &start);
         let end_match = result.iter().position(|(s, _)| s == &end);
 
         match (start_match, end_match) {
             (Some(i), Some(j)) if i == j => {
-                continue;
+                if allow_closed {
+                    result[i].1 = end;
+                } else {
+                    continue;
+                }
             }
             (Some(i), Some(j)) => {
                 let merged_tuple = (result[i].0.clone(), result[j].1.clone());
@@ -37,40 +48,12 @@ pub fn merge_lines(maze: Maze) -> Vec<(CircleCoordinate, CircleCoordinate)> {
     result
 }
 
+pub fn merge_lines(maze: Maze) -> Vec<(CircleCoordinate, CircleCoordinate)> {
+    merge_coordinates(maze.lines(), |line| line.next_out(), false)
+}
+
 pub fn merge_arcs(maze: Maze) -> Vec<(CircleCoordinate, CircleCoordinate)> {
-    let mut result: Vec<(CircleCoordinate, CircleCoordinate)> = Vec::new();
-
-    for arc in maze.arcs().iter() {
-        let start = arc.clone();
-        let end = arc.next_clockwise().expect("Failed to create next coordinate");
-
-        let start_match = result.iter().position(|(_, e)| e == &start);
-        let end_match = result.iter().position(|(s, _)| s == &end);
-
-        match (start_match, end_match) {
-            (Some(i), Some(j)) if i == j => {
-                result[i].1 = end;
-            }
-            (Some(i), Some(j)) => {
-                let merged_tuple = (result[i].0.clone(), result[j].1.clone());
-                let (first, second) = if i < j { (i, j) } else { (j, i) };
-                result.remove(second);
-                result.remove(first);
-                result.push(merged_tuple);
-            }
-            (Some(i), None) => {
-                result[i].1 = end;
-            }
-            (None, Some(j)) => {
-                result[j].0 = start;
-            }
-            (None, None) => {
-                result.push((start, end));
-            }
-        }
-    }
-
-    result
+    merge_coordinates(maze.arcs(), |arc| arc.next_clockwise(), true)
 }
 
 #[cfg(test)]
