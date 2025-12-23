@@ -20,6 +20,20 @@ pub fn render(maze: &Maze) -> std::io::Result<()> {
         view_size
     ));
 
+    svg_content.push_str(&render_arcs(maze));
+    svg_content.push_str(&render_lines(maze));
+
+    svg_content.push_str("</svg>\n");
+
+    let mut file = File::create("maze.svg")?;
+    file.write_all(svg_content.as_bytes())?;
+
+    Ok(())
+}
+
+fn render_arcs(maze: &Maze) -> String {
+    let mut content = String::new();
+
     for arc in maze.arcs() {
         let start_angle = arc.angle();
         let next = arc.next_clockwise().unwrap();
@@ -35,12 +49,18 @@ pub fn render(maze: &Maze) -> std::io::Result<()> {
         let end_x = radius as f64 * end_angle_rad.cos();
         let end_y = radius as f64 * end_angle_rad.sin();
 
-        svg_content.push_str(&format!(
+        content.push_str(&format!(
             r#"  <path d="M {},{} A {},{} 0 0 1 {},{}" fill="none" stroke="black" stroke-width="1"/>
 "#,
             start_x, start_y, radius, radius, end_x, end_y
         ));
     }
+
+    content
+}
+
+fn render_lines(maze: &Maze) -> String {
+    let mut content = String::new();
 
     for line in maze.lines() {
         let start_angle = line.angle();
@@ -58,19 +78,14 @@ pub fn render(maze: &Maze) -> std::io::Result<()> {
         let end_x = end_radius as f64 * end_angle_rad.cos();
         let end_y = end_radius as f64 * end_angle_rad.sin();
 
-        svg_content.push_str(&format!(
+        content.push_str(&format!(
             r#"  <line x1="{}" y1="{}" x2="{}" y2="{}" stroke="black" stroke-width="1"/>
 "#,
             start_x, start_y, end_x, end_y
         ));
     }
 
-    svg_content.push_str("</svg>\n");
-
-    let mut file = File::create("maze.svg")?;
-    file.write_all(svg_content.as_bytes())?;
-
-    Ok(())
+    content
 }
 
 fn angle_to_radians(angle: &fraction::Fraction) -> f64 {
