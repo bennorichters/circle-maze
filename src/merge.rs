@@ -5,8 +5,7 @@ pub fn merge_lines(maze: Maze) -> Vec<(CircleCoordinate, CircleCoordinate)> {
     let mut result: Vec<(CircleCoordinate, CircleCoordinate)> = Vec::new();
 
     for line in maze.lines().iter() {
-        let start = CircleCoordinate::create_with_fraction(line.circle(), *line.angle())
-            .expect("Failed to create coordinate");
+        let start = line.clone();
         let end = line.next_out().expect("Failed to create next coordinate");
 
         let start_match = result.iter().position(|(_, e)| e == &start);
