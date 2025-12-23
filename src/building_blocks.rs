@@ -60,11 +60,11 @@ impl CircleCoordinate {
         Self::create_with_arc_index(self.circle, next_arc_index)
     }
 
-    pub fn next_in(&self) -> Result<Self, String> {
+    pub fn next_in(&self) -> Option<Self> {
         if self.circle == 0 {
-            return Err("Cannot move inward from circle 0".to_string());
+            return None;
         }
-        Ok(Self::create_with_fraction(self.circle - 1, self.angle))
+        Some(Self::create_with_fraction(self.circle - 1, self.angle))
     }
 
     pub fn angle(&self) -> &Fraction {
@@ -332,7 +332,6 @@ mod tests {
 
         let coord0_0 = CircleCoordinate::create_with_arc_index(0, 0);
         let result = coord0_0.next_in();
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), "Cannot move inward from circle 0");
+        assert!(result.is_none());
     }
 }
