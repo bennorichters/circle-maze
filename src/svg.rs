@@ -1,4 +1,5 @@
 use crate::maze::Maze;
+use crate::merge::{merge_arcs, merge_lines};
 use std::fs::File;
 use std::io::Write;
 use std::f64::consts::PI;
@@ -34,21 +35,22 @@ pub fn render(maze: &Maze) -> std::io::Result<()> {
 
 fn render_arcs(maze: &Maze) -> String {
     let mut content = String::new();
+    let merged_arcs = merge_arcs(maze);
 
-    for arc in maze.arcs() {
-        let start_angle = arc.angle();
-        let next = arc.next_clockwise().unwrap();
-        let end_angle = next.angle();
-
-        let radius = arc.circle() * 10;
+    for (start, end) in merged_arcs {
+        let start_angle = start.angle();
+        let end_angle = end.angle();
+        let radius = start.circle() * 10;
 
         let (start_x, start_y) = polar_to_cartesian(radius, start_angle);
         let (end_x, end_y) = polar_to_cartesian(radius, end_angle);
 
+        let large_arc = if start == end { 1 } else { 0 };
+
         content.push_str(&format!(
-            r#"  <path d="M {:.2},{:.2} A {},{} 0 0 1 {:.2},{:.2}"/>
+            r#"  <path d="M {:.2},{:.2} A {},{} 0 {} 1 {:.2},{:.2}"/>
 "#,
-            start_x, start_y, radius, radius, end_x, end_y
+            start_x, start_y, radius, radius, large_arc, end_x, end_y
         ));
     }
 
@@ -57,14 +59,13 @@ fn render_arcs(maze: &Maze) -> String {
 
 fn render_lines(maze: &Maze) -> String {
     let mut content = String::new();
+    let merged_lines = merge_lines(maze);
 
-    for line in maze.lines() {
-        let start_angle = line.angle();
-        let start_radius = line.circle() * 10;
-
-        let next = line.next_out().unwrap();
-        let end_angle = next.angle();
-        let end_radius = next.circle() * 10;
+    for (start, end) in merged_lines {
+        let start_angle = start.angle();
+        let start_radius = start.circle() * 10;
+        let end_angle = end.angle();
+        let end_radius = end.circle() * 10;
 
         let (start_x, start_y) = polar_to_cartesian(start_radius, start_angle);
         let (end_x, end_y) = polar_to_cartesian(end_radius, end_angle);

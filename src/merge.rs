@@ -48,11 +48,11 @@ where
     result
 }
 
-pub fn merge_lines(maze: Maze) -> Vec<(CircleCoordinate, CircleCoordinate)> {
+pub fn merge_lines(maze: &Maze) -> Vec<(CircleCoordinate, CircleCoordinate)> {
     merge_coordinates(maze.lines(), |line| line.next_out(), false)
 }
 
-pub fn merge_arcs(maze: Maze) -> Vec<(CircleCoordinate, CircleCoordinate)> {
+pub fn merge_arcs(maze: &Maze) -> Vec<(CircleCoordinate, CircleCoordinate)> {
     merge_coordinates(maze.arcs(), |arc| arc.next_clockwise(), true)
 }
 
@@ -131,7 +131,7 @@ mod tests {
     #[test]
     fn test_merge_lines_with_four_circles() {
         let maze = create_test_maze();
-        let result = merge_lines(maze);
+        let result = merge_lines(&maze);
 
         assert_eq!(result.len(), 9, "Expected 9 merged line pairs");
     }
@@ -139,7 +139,7 @@ mod tests {
     #[test]
     fn test_merge_arcs_with_four_circles() {
         let maze = create_test_maze();
-        let result = merge_arcs(maze);
+        let result = merge_arcs(&maze);
 
         assert_eq!(result.len(), 8, "Expected 8 merged arc pairs");
     }
