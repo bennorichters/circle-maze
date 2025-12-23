@@ -1,58 +1,41 @@
 use crate::building_blocks::CircleCoordinate;
 use crate::maze::Maze;
 
-fn merge_tuples(
-    tuples: Vec<(CircleCoordinate, CircleCoordinate)>,
-) -> Vec<(CircleCoordinate, CircleCoordinate)> {
-    let mut current = tuples;
+pub fn merge_lines(maze: Maze) -> Vec<(CircleCoordinate, CircleCoordinate)> {
+    let mut result: Vec<(CircleCoordinate, CircleCoordinate)> = Vec::new();
 
-    loop {
-        let mut merged = false;
+    for line in maze.lines().iter() {
+        let start = CircleCoordinate::create_with_fraction(line.circle(), *line.angle())
+            .expect("Failed to create coordinate");
+        let end = line.next_out().expect("Failed to create next coordinate");
 
-        for i in 0..current.len() {
-            if let Some(j) = current.iter().skip(i + 1).position(|next| {
-                current[i].1 == next.0
-            }) {
-                let j = j + i + 1;
-                let new_tuple = (current[i].0.clone(), current[j].1.clone());
-                let mut result = Vec::new();
+        let start_match = result.iter().position(|(_, e)| e == &start);
+        let end_match = result.iter().position(|(s, _)| s == &end);
 
-                for (idx, tuple) in current.into_iter().enumerate() {
-                    if idx == i {
-                        result.push(new_tuple.clone());
-                    } else if idx != j {
-                        result.push(tuple);
-                    }
-                }
-
-                current = result;
-                merged = true;
-                break;
+        match (start_match, end_match) {
+            (Some(i), Some(j)) if i == j => {
+                continue;
+            }
+            (Some(i), Some(j)) => {
+                let merged_tuple = (result[i].0.clone(), result[j].1.clone());
+                let (first, second) = if i < j { (i, j) } else { (j, i) };
+                result.remove(second);
+                result.remove(first);
+                result.push(merged_tuple);
+            }
+            (Some(i), None) => {
+                result[i].1 = end;
+            }
+            (None, Some(j)) => {
+                result[j].0 = start;
+            }
+            (None, None) => {
+                result.push((start, end));
             }
         }
-
-        if !merged {
-            return current;
-        }
     }
-}
 
-pub fn merge_lines(maze: Maze) -> Vec<(CircleCoordinate, CircleCoordinate)> {
-    let tuples: Vec<(CircleCoordinate, CircleCoordinate)> = maze
-        .lines()
-        .iter()
-        .map(|line| {
-            let original = CircleCoordinate::create_with_fraction(
-                line.circle(),
-                *line.angle(),
-            )
-            .expect("Failed to create coordinate");
-            let next = line.next_out().expect("Failed to create next coordinate");
-            (original, next)
-        })
-        .collect();
-
-    merge_tuples(tuples)
+    result
 }
 
 #[cfg(test)]
