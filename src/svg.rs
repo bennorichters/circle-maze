@@ -42,6 +42,29 @@ pub fn render(maze: &Maze) -> std::io::Result<()> {
         ));
     }
 
+    for line in maze.lines() {
+        let start_angle = line.angle();
+        let start_radius = line.circle() * 10;
+
+        let next = line.next_out().unwrap();
+        let end_angle = next.angle();
+        let end_radius = next.circle() * 10;
+
+        let start_angle_rad = angle_to_radians(start_angle);
+        let end_angle_rad = angle_to_radians(end_angle);
+
+        let start_x = start_radius as f64 * start_angle_rad.cos();
+        let start_y = start_radius as f64 * start_angle_rad.sin();
+        let end_x = end_radius as f64 * end_angle_rad.cos();
+        let end_y = end_radius as f64 * end_angle_rad.sin();
+
+        svg_content.push_str(&format!(
+            r#"  <line x1="{}" y1="{}" x2="{}" y2="{}" stroke="black" stroke-width="1"/>
+"#,
+            start_x, start_y, end_x, end_y
+        ));
+    }
+
     svg_content.push_str("</svg>\n");
 
     let mut file = File::create("maze.svg")?;
