@@ -6,4 +6,5 @@ edition = "2024"
 [dependencies]
 clap = { version = "4.5.53", features = ["derive"] }
 fraction = "0.15.3"
+rand = "0.9.2"
 serde_json = "1.0.146"

@@ -1,4 +1,6 @@
 use crate::building_blocks::{CircleCoordinate, calc_total_arcs};
+use rand::Rng;
+use rand::{rng, seq::SliceRandom};
 use serde_json::Value;
 
 #[derive(Debug)]
@@ -22,36 +24,43 @@ impl Maze {
     }
 }
 
-pub struct MazeFactory {
-    circles: usize,
-    arcs: Vec<CircleCoordinate>,
-    lines: Vec<CircleCoordinate>,
-    free: Vec<CircleCoordinate>,
-}
+fn factory(circles: usize) -> Maze {
+    let outer = calc_total_arcs(circles);
+    let total = outer * circles;
+    let mut used: Vec<u8> = vec![0; total];
+    used[(total - outer)..].fill(1);
 
-impl MazeFactory {
-    pub fn new(circles: usize) -> Self {
-        Self {
-            circles,
-            arcs: Vec::new(),
-            lines: Vec::new(),
-            free: all_coords(circles),
+    let mut free: Vec<(usize, usize)> = vec![];
+    for c in 0..(circles - 2) {
+        let t = calc_total_arcs(c);
+        for arc_index in 0..t {
+            free.push((c, arc_index));
+        }
+    }
+    free.shuffle(&mut rng());
+
+    for f in free {
+        let used_index = f.0 * outer + f.1;
+        if used[used_index] != 0 {
+            continue;
+        }
+
+        // let mut _path = vec![f];
+        let mut options: Vec<(usize, usize, u8)> =
+            vec![(f.0, f.1, 0), (f.0, f.1, 1), (f.0, f.1, 2), (f.0, f.1, 3)];
+
+        loop {
+            let opt_index = rand::rng().random_range(0..options.len());
+            let _opt = options.swap_remove(opt_index);
+
         }
     }
 
-    pub fn create(circles: usize) -> Maze {
-        Maze {
-            circles,
-            arcs: vec!(),
-            lines: vec!(),
-        }
-    }
+    todo!()
 }
 
 fn all_coords(circle: usize) -> Vec<CircleCoordinate> {
-    (1..=circle)
-        .flat_map(coordinates_for_circle)
-        .collect()
+    (1..=circle).flat_map(coordinates_for_circle).collect()
 }
 
 fn coordinates_for_circle(circle: usize) -> Vec<CircleCoordinate> {
@@ -66,17 +75,18 @@ pub struct MazeDeserializer;
 impl MazeDeserializer {
     pub fn deserialize(data: Value) -> Result<Maze, String> {
         // Check that data is an object
-        let obj = data.as_object()
-            .ok_or("Input must be a JSON object")?;
+        let obj = data.as_object().ok_or("Input must be a JSON object")?;
 
         // Extract and validate 'circles' field
-        let circles = obj.get("circles")
+        let circles = obj
+            .get("circles")
             .ok_or("Missing 'circles' field")?
             .as_u64()
             .ok_or("'circles' must be a number")? as usize;
 
         // Extract and validate 'arcs' field
-        let arcs_array = obj.get("arcs")
+        let arcs_array = obj
+            .get("arcs")
             .ok_or("Missing 'arcs' field")?
             .as_array()
             .ok_or("'arcs' must be an array")?;
@@ -84,15 +94,19 @@ impl MazeDeserializer {
         // Parse arcs array
         let mut arcs = Vec::new();
         for (i, arc_obj) in arcs_array.iter().enumerate() {
-            let arc_map = arc_obj.as_object()
+            let arc_map = arc_obj
+                .as_object()
                 .ok_or(format!("arcs[{}] must be an object", i))?;
 
-            let circle = arc_map.get("circle")
+            let circle = arc_map
+                .get("circle")
                 .ok_or(format!("arcs[{}] missing 'circle' field", i))?
                 .as_u64()
-                .ok_or(format!("arcs[{}].circle must be a number", i))? as usize;
+                .ok_or(format!("arcs[{}].circle must be a number", i))?
+                as usize;
 
-            let arc = arc_map.get("arc")
+            let arc = arc_map
+                .get("arc")
                 .ok_or(format!("arcs[{}] missing 'arc' field", i))?
                 .as_u64()
                 .ok_or(format!("arcs[{}].arc must be a number", i))? as usize;
@@ -102,7 +116,8 @@ impl MazeDeserializer {
         }
 
         // Extract and validate 'lines' field
-        let lines_array = obj.get("lines")
+        let lines_array = obj
+            .get("lines")
             .ok_or("Missing 'lines' field")?
             .as_array()
             .ok_or("'lines' must be an array")?;
@@ -110,18 +125,23 @@ impl MazeDeserializer {
         // Parse lines array
         let mut lines = Vec::new();
         for (i, line_obj) in lines_array.iter().enumerate() {
-            let line_map = line_obj.as_object()
+            let line_map = line_obj
+                .as_object()
                 .ok_or(format!("lines[{}] must be an object", i))?;
 
-            let circle = line_map.get("circle")
+            let circle = line_map
+                .get("circle")
                 .ok_or(format!("lines[{}] missing 'circle' field", i))?
                 .as_u64()
-                .ok_or(format!("lines[{}].circle must be a number", i))? as usize;
+                .ok_or(format!("lines[{}].circle must be a number", i))?
+                as usize;
 
-            let arc = line_map.get("arc")
+            let arc = line_map
+                .get("arc")
                 .ok_or(format!("lines[{}] missing 'arc' field", i))?
                 .as_u64()
-                .ok_or(format!("lines[{}].arc must be a number", i))? as usize;
+                .ok_or(format!("lines[{}].arc must be a number", i))?
+                as usize;
 
             let coord = CircleCoordinate::create_with_arc_index(circle, arc);
             lines.push(coord);
