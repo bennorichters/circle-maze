@@ -6,6 +6,7 @@ use clap::Parser;
 mod building_blocks;
 mod json_maze;
 mod maze;
+mod merge;
 mod svg;
 
 #[derive(Parser)]
