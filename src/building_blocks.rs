@@ -69,6 +69,19 @@ impl CircleCoordinate {
         Self::create_with_fraction(self.circle + 1, self.angle)
     }
 
+    pub fn next_counter_clockwise(&self) -> Result<Self, String> {
+        let total_arcs = calc_total_arcs(self.circle);
+        let next_arc_index = (self.arc_index + total_arcs - 1) % total_arcs;
+        Self::create_with_arc_index(self.circle, next_arc_index)
+    }
+
+    pub fn next_in(&self) -> Result<Self, String> {
+        if self.circle == 0 {
+            return Err("Cannot move inward from circle 0".to_string());
+        }
+        Self::create_with_fraction(self.circle - 1, self.angle)
+    }
+
     pub fn angle(&self) -> &Fraction {
         &self.angle
     }
