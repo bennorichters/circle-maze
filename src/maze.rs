@@ -42,7 +42,8 @@ pub fn factory(circles: usize) -> Maze {
     let mut lines: Vec<CircleCoordinate> = vec![];
     let mut arcs: Vec<CircleCoordinate> = vec![];
     for f in free {
-        if used[(f.0 - 1) * outer + f.1] {
+        let mut index = (f.0 - 1) * outer + f.1;
+        if used[index] {
             continue;
         }
 
@@ -50,7 +51,6 @@ pub fn factory(circles: usize) -> Maze {
 
         let mut coord = CircleCoordinate::create_with_arc_index(f.0, f.1);
         let mut options: Vec<(usize, usize, bool)> = vec![(f.0, f.1, false), (f.0, f.1, true)];
-        let mut index = (f.0 - 1) * outer + f.1;
         loop {
             path[index] = true;
             used[index] = true;
