@@ -1,10 +1,6 @@
 use crate::building_blocks::CircleCoordinate;
 use crate::maze::Maze;
 
-fn coordinates_equal(a: &CircleCoordinate, b: &CircleCoordinate) -> bool {
-    a.circle() == b.circle() && a.angle() == b.angle()
-}
-
 fn merge_tuples(
     tuples: Vec<(CircleCoordinate, CircleCoordinate)>,
 ) -> Vec<(CircleCoordinate, CircleCoordinate)> {
@@ -15,7 +11,7 @@ fn merge_tuples(
 
         for i in 0..current.len() {
             if let Some(j) = current.iter().skip(i + 1).position(|next| {
-                coordinates_equal(&current[i].1, &next.0)
+                current[i].1 == next.0
             }) {
                 let j = j + i + 1;
                 let new_tuple = (current[i].0.clone(), current[j].1.clone());

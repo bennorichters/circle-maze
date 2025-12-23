@@ -16,6 +16,14 @@ pub struct CircleCoordinate {
     angle: Fraction,
 }
 
+impl PartialEq for CircleCoordinate {
+    fn eq(&self, other: &Self) -> bool {
+        self.circle == other.circle && self.arc_index == other.arc_index
+    }
+}
+
+impl Eq for CircleCoordinate {}
+
 impl CircleCoordinate {
     pub fn new(circle: usize, arc_index: usize, angle: Fraction) -> Result<Self, String> {
         if arc_index > (calc_total_arcs(circle) - 1) {
