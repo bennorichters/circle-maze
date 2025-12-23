@@ -56,46 +56,23 @@ fn render_arcs(maze: &Maze) -> String {
 
 fn render_lines(maze: &Maze) -> String {
     let mut content = String::new();
-    let lines: Vec<_> = maze.lines().iter().collect();
 
-    if lines.is_empty() {
-        return content;
-    }
+    for line in maze.lines() {
+        let start_angle = line.angle();
+        let start_radius = line.circle() * 10;
 
-    let mut i = 0;
-    while i < lines.len() {
-        let start_line = lines[i];
-        let start_angle = start_line.angle();
-        let start_radius = start_line.circle() * 10;
-
-        let mut end_coord = start_line.next_out().unwrap();
-        let mut end_radius = end_coord.circle() * 10;
-
-        let mut j = i + 1;
-        while j < lines.len() {
-            let next_line = lines[j];
-
-            if next_line.circle() * 10 == end_radius
-                && next_line.angle() == end_coord.angle()
-            {
-                end_coord = next_line.next_out().unwrap();
-                end_radius = end_coord.circle() * 10;
-                j += 1;
-            } else {
-                break;
-            }
-        }
+        let next = line.next_out().unwrap();
+        let end_angle = next.angle();
+        let end_radius = next.circle() * 10;
 
         let (start_x, start_y) = polar_to_cartesian(start_radius, start_angle);
-        let (end_x, end_y) = polar_to_cartesian(end_radius, end_coord.angle());
+        let (end_x, end_y) = polar_to_cartesian(end_radius, end_angle);
 
         content.push_str(&format!(
             r#"  <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="black" stroke-width="1" stroke-linecap="round"/>
 "#,
             start_x, start_y, end_x, end_y
         ));
-
-        i = j;
     }
 
     content
