@@ -51,7 +51,7 @@ impl CircleCoordinate {
     }
 
     pub fn next_out(&self) -> Self {
-        Self::create_with_fraction(self.circle + 1, self.angle.clone())
+        Self::create_with_fraction(self.circle + 1, self.angle)
     }
 
     pub fn next_counter_clockwise(&self) -> Self {
@@ -64,7 +64,7 @@ impl CircleCoordinate {
         if self.circle == 0 {
             return Err("Cannot move inward from circle 0".to_string());
         }
-        Ok(Self::create_with_fraction(self.circle - 1, self.angle.clone()))
+        Ok(Self::create_with_fraction(self.circle - 1, self.angle))
     }
 
     pub fn angle(&self) -> &Fraction {
