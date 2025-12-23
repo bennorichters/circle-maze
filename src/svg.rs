@@ -25,7 +25,7 @@ pub fn render(maze: &Maze) -> std::io::Result<()> {
     svg_content.push_str(&render_arcs(maze));
     svg_content.push_str(&render_lines(maze));
 
-    svg_content.push_str("</g></svg>\n");
+    svg_content.push_str("</g>\n</svg>\n");
 
     let mut file = File::create("maze.svg")?;
     file.write_all(svg_content.as_bytes())?;
