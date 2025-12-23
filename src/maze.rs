@@ -12,6 +12,10 @@ impl Maze {
     pub fn circles(&self) -> usize {
         self.circles
     }
+
+    pub fn arcs(&self) -> &Vec<CircleCoordinate> {
+        &self.arcs
+    }
 }
 
 pub struct MazeFactory {

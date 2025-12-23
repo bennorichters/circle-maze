@@ -1,15 +1,14 @@
 use crate::maze::Maze;
 use std::fs::File;
 use std::io::Write;
+use std::f64::consts::PI;
 
 pub fn render(maze: &Maze) -> std::io::Result<()> {
     let circles = maze.circles();
 
-    // Calculate the size needed to fit all circles
     let max_radius = circles * 10;
-    let view_size = max_radius * 2 + 20; // Add some padding
+    let view_size = max_radius * 2 + 20;
 
-    // Create SVG content
     let mut svg_content = String::new();
     svg_content.push_str(&format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -21,21 +20,37 @@ pub fn render(maze: &Maze) -> std::io::Result<()> {
         view_size
     ));
 
-    // Add circles
-    for i in 1..=circles {
-        let radius = i * 10;
+    for arc in maze.arcs() {
+        let start_angle = arc.angle();
+        let next = arc.next_clockwise().unwrap();
+        let end_angle = next.angle();
+
+        let radius = arc.circle() * 10;
+
+        let start_angle_rad = angle_to_radians(start_angle);
+        let end_angle_rad = angle_to_radians(end_angle);
+
+        let start_x = radius as f64 * start_angle_rad.cos();
+        let start_y = radius as f64 * start_angle_rad.sin();
+        let end_x = radius as f64 * end_angle_rad.cos();
+        let end_y = radius as f64 * end_angle_rad.sin();
+
         svg_content.push_str(&format!(
-            r#"  <circle cx="0" cy="0" r="{}" fill="none" stroke="black" stroke-width="1"/>
+            r#"  <path d="M {},{} A {},{} 0 0 1 {},{}" fill="none" stroke="black" stroke-width="1"/>
 "#,
-            radius
+            start_x, start_y, radius, radius, end_x, end_y
         ));
     }
 
     svg_content.push_str("</svg>\n");
 
-    // Write to file
     let mut file = File::create("maze.svg")?;
     file.write_all(svg_content.as_bytes())?;
 
     Ok(())
+}
+
+fn angle_to_radians(angle: &fraction::Fraction) -> f64 {
+    let degrees = (*angle.numer().unwrap() as f64) / (*angle.denom().unwrap() as f64);
+    degrees * PI / 180.0
 }

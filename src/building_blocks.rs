@@ -60,6 +60,14 @@ impl CircleCoordinate {
     pub fn next_out(&self) -> Result<Self, String> {
         Self::create_with_fraction(self.circle + 1, self.angle)
     }
+
+    pub fn angle(&self) -> &Fraction {
+        &self.angle
+    }
+
+    pub fn circle(&self) -> usize {
+        self.circle
+    }
 }
 
 pub fn calc_total_arcs(circle: usize) -> usize {
