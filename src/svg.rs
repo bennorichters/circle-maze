@@ -41,13 +41,8 @@ fn render_arcs(maze: &Maze) -> String {
 
         let radius = arc.circle() * 10;
 
-        let start_angle_rad = angle_to_radians(start_angle);
-        let end_angle_rad = angle_to_radians(end_angle);
-
-        let start_x = radius as f64 * start_angle_rad.cos();
-        let start_y = radius as f64 * start_angle_rad.sin();
-        let end_x = radius as f64 * end_angle_rad.cos();
-        let end_y = radius as f64 * end_angle_rad.sin();
+        let (start_x, start_y) = polar_to_cartesian(radius, start_angle);
+        let (end_x, end_y) = polar_to_cartesian(radius, end_angle);
 
         content.push_str(&format!(
             r#"  <path d="M {:.2},{:.2} A {},{} 0 0 1 {:.2},{:.2}" fill="none" stroke="black" stroke-width="1"/>
@@ -70,13 +65,8 @@ fn render_lines(maze: &Maze) -> String {
         let end_angle = next.angle();
         let end_radius = next.circle() * 10;
 
-        let start_angle_rad = angle_to_radians(start_angle);
-        let end_angle_rad = angle_to_radians(end_angle);
-
-        let start_x = start_radius as f64 * start_angle_rad.cos();
-        let start_y = start_radius as f64 * start_angle_rad.sin();
-        let end_x = end_radius as f64 * end_angle_rad.cos();
-        let end_y = end_radius as f64 * end_angle_rad.sin();
+        let (start_x, start_y) = polar_to_cartesian(start_radius, start_angle);
+        let (end_x, end_y) = polar_to_cartesian(end_radius, end_angle);
 
         content.push_str(&format!(
             r#"  <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="black" stroke-width="1"/>
@@ -91,4 +81,9 @@ fn render_lines(maze: &Maze) -> String {
 fn angle_to_radians(angle: &fraction::Fraction) -> f64 {
     let degrees = (*angle.numer().unwrap() as f64) / (*angle.denom().unwrap() as f64);
     degrees * PI / 180.0
+}
+
+fn polar_to_cartesian(radius: usize, angle: &fraction::Fraction) -> (f64, f64) {
+    let angle_rad = angle_to_radians(angle);
+    (radius as f64 * angle_rad.cos(), radius as f64 * angle_rad.sin())
 }
