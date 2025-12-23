@@ -50,7 +50,7 @@ impl MazeFactory {
 
 fn all_coords(circle: usize) -> Vec<CircleCoordinate> {
     (1..=circle)
-        .flat_map(|c| coordinates_for_circle(c))
+        .flat_map(coordinates_for_circle)
         .collect()
 }
 
