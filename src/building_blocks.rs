@@ -9,7 +9,7 @@ const ANGULAR_DIVISOR_FIRST_CIRCLE: usize = 60;
 
 const ARCS_FIRST_CIRCLE: usize = ANGLE_FULL_CIRCLE / ANGULAR_DIVISOR_FIRST_CIRCLE;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CircleCoordinate {
     circle: usize,
     arc_index: usize,
