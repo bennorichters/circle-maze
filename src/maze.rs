@@ -74,14 +74,20 @@ impl Maze {
     }
 }
 
-pub fn factory<R: Rng>(circles: usize, rng: &mut R) -> Maze {
-    let outer = calc_total_arcs(circles);
-    let total = outer * circles;
-    let mut path: Vec<bool> = vec![false; total];
-    let mut used: Vec<bool> = vec![false; total];
-    used[(total - outer)..].fill(true);
+fn coord_to_index(circle: usize, arc_index: usize, outer: usize) -> usize {
+    (circle - 1) * outer + arc_index
+}
 
-    let mut free: Vec<(usize, usize)> = vec![];
+fn initialize_tracking_vectors(circles: usize, outer: usize) -> (Vec<bool>, Vec<bool>) {
+    let total = outer * circles;
+    let path = vec![false; total];
+    let mut used = vec![false; total];
+    used[(total - outer)..].fill(true);
+    (path, used)
+}
+
+fn generate_shuffled_coordinates<R: Rng>(circles: usize, rng: &mut R) -> Vec<(usize, usize)> {
+    let mut free = Vec::new();
     for c in 1..circles {
         let t = calc_total_arcs(c);
         for arc_index in 0..t {
@@ -89,60 +95,99 @@ pub fn factory<R: Rng>(circles: usize, rng: &mut R) -> Maze {
         }
     }
     free.shuffle(rng);
+    free
+}
 
-    let mut lines: Vec<CircleCoord> = vec![];
-    let mut arcs: Vec<CircleCoord> = vec![];
+fn perform_random_walk<R: Rng>(
+    start: (usize, usize),
+    outer: usize,
+    path: &mut Vec<bool>,
+    used: &mut Vec<bool>,
+    lines: &mut Vec<CircleCoord>,
+    arcs: &mut Vec<CircleCoord>,
+    rng: &mut R,
+) {
+    path.fill(false);
+
+    let mut coord = CircleCoord::create_with_arc_index(start.0, start.1);
+    let mut options: Vec<(usize, usize, bool)> = vec![(start.0, start.1, false), (start.0, start.1, true)];
+    let mut index = coord_to_index(start.0, start.1, outer);
+
+    loop {
+        path[index] = true;
+        used[index] = true;
+
+        let mut opt: (usize, usize, bool);
+        let mut next: CircleCoord;
+        loop {
+            let opt_index = rng.random_range(0..options.len());
+            opt = options.swap_remove(opt_index);
+
+            next = if opt.2 {
+                coord.next_out()
+            } else {
+                coord.next_clockwise()
+            };
+            index = coord_to_index(next.circle(), next.arc_index(), outer);
+
+            if !path[index] {
+                break;
+            }
+        }
+
+        if opt.2 {
+            lines.push(coord);
+        } else {
+            arcs.push(coord);
+        }
+
+        if used[index] {
+            break;
+        }
+
+        coord = next;
+        options.push((coord.circle(), coord.arc_index(), false));
+        options.push((coord.circle(), coord.arc_index(), true));
+    }
+}
+
+fn build_spanning_tree<R: Rng>(
+    free: Vec<(usize, usize)>,
+    outer: usize,
+    path: &mut Vec<bool>,
+    used: &mut Vec<bool>,
+    rng: &mut R,
+) -> (Vec<CircleCoord>, Vec<CircleCoord>) {
+    let mut lines = Vec::new();
+    let mut arcs = Vec::new();
+
     for f in free {
-        let mut index = (f.0 - 1) * outer + f.1;
+        let index = coord_to_index(f.0, f.1, outer);
         if used[index] {
             continue;
         }
 
-        path.fill(false);
-
-        let mut coord = CircleCoord::create_with_arc_index(f.0, f.1);
-        let mut options: Vec<(usize, usize, bool)> = vec![(f.0, f.1, false), (f.0, f.1, true)];
-        loop {
-            path[index] = true;
-            used[index] = true;
-
-            let mut opt: (usize, usize, bool);
-            let mut next: CircleCoord;
-            loop {
-                let opt_index = rng.random_range(0..options.len());
-                opt = options.swap_remove(opt_index);
-
-                next = if opt.2 {
-                    coord.next_out()
-                } else {
-                    coord.next_clockwise()
-                };
-                index = (next.circle() - 1) * outer + next.arc_index();
-
-                if !path[index] {
-                    break;
-                }
-            }
-
-            if opt.2 {
-                lines.push(coord);
-            } else {
-                arcs.push(coord);
-            }
-
-            if used[index] {
-                break;
-            }
-
-            coord = next;
-            options.push((coord.circle(), coord.arc_index(), false));
-            options.push((coord.circle(), coord.arc_index(), true));
-        }
+        perform_random_walk(f, outer, path, used, &mut lines, &mut arcs, rng);
     }
 
+    (lines, arcs)
+}
+
+fn add_outer_boundary(mut arcs: Vec<CircleCoord>, circles: usize) -> Vec<CircleCoord> {
+    let outer = calc_total_arcs(circles);
     for i in 0..outer {
         arcs.push(CircleCoord::create_with_arc_index(circles, i));
     }
+    arcs
+}
+
+pub fn factory<R: Rng>(circles: usize, rng: &mut R) -> Maze {
+    let outer = calc_total_arcs(circles);
+    let (mut path, mut used) = initialize_tracking_vectors(circles, outer);
+    let free = generate_shuffled_coordinates(circles, rng);
+
+    let (lines, arcs) = build_spanning_tree(free, outer, &mut path, &mut used, rng);
+    let arcs = add_outer_boundary(arcs, circles);
 
     Maze {
         circles,
