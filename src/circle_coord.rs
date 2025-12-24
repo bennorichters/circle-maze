@@ -33,6 +33,18 @@ impl CircleCoord {
         }
     }
 
+    pub fn angle(&self) -> &Fraction {
+        &self.angle
+    }
+
+    pub fn circle(&self) -> usize {
+        self.circle
+    }
+
+    pub fn arc_index(&self) -> usize {
+        self.arc_index
+    }
+
     pub fn create_with_arc_index(circle: usize, arc_index: usize) -> Self {
         let angle = calc_angle_step(circle) * Fraction::from(arc_index);
         Self::new(circle, arc_index, angle)
@@ -62,18 +74,6 @@ impl CircleCoord {
 
     pub fn next_in(&self) -> Self {
         Self::create_with_fraction(self.circle - 1, self.angle)
-    }
-
-    pub fn angle(&self) -> &Fraction {
-        &self.angle
-    }
-
-    pub fn circle(&self) -> usize {
-        self.circle
-    }
-
-    pub fn arc_index(&self) -> usize {
-        self.arc_index
     }
 }
 
