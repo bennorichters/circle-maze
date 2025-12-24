@@ -368,7 +368,7 @@ mod tests {
 
         let maze = MazeDeserializer::deserialize(json_data).unwrap();
         let coord = CircleCoord::create_with_arc_index(0, 0);
-        let neighbours = maze.accessible_neighbours_circle_0(&coord);
+        let neighbours = maze.accessible_neighbours(&coord);
 
         assert_eq!(neighbours.len(), 1);
         assert!(neighbours.contains(&CircleCoord::create_with_arc_index(1, 4)));
@@ -381,7 +381,7 @@ mod tests {
 
         let maze = MazeDeserializer::deserialize(json_data).unwrap();
         let coord = CircleCoord::create_with_arc_index(1, 4);
-        let neighbours = maze.accessible_neighbours_circle_1(&coord);
+        let neighbours = maze.accessible_neighbours(&coord);
 
         assert_eq!(neighbours.len(), 3);
         assert!(neighbours.contains(&CircleCoord::create_with_arc_index(0, 0)));
