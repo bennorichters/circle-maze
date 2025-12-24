@@ -62,9 +62,9 @@ pub fn factory<R: Rng>(circles: usize, rng: &mut R) -> Maze {
                 opt = options.swap_remove(opt_index);
 
                 next = if opt.2 {
-                    coord.next_out().unwrap()
+                    coord.next_out()
                 } else {
-                    coord.next_clockwise().unwrap()
+                    coord.next_clockwise()
                 };
                 index = (next.circle() - 1) * outer + next.arc_index();
 

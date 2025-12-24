@@ -7,13 +7,13 @@ fn merge_coordinates<F>(
     allow_closed: bool,
 ) -> Vec<(CircleCoord, CircleCoord)>
 where
-    F: Fn(&CircleCoord) -> Option<CircleCoord>,
+    F: Fn(&CircleCoord) -> CircleCoord,
 {
     let mut result: Vec<(CircleCoord, CircleCoord)> = Vec::new();
 
     for coord in coordinates.iter() {
         let start = coord.clone();
-        let end = get_next(coord).expect("Failed to get next coordinate");
+        let end = get_next(coord);
 
         let start_match = result.iter().position(|(_, e)| e == &start);
         let end_match = result.iter().position(|(s, _)| s == &end);
