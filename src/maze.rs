@@ -381,9 +381,12 @@ mod tests {
         });
 
         let maze = MazeDeserializer::deserialize(json_data).unwrap();
-        let coord = CircleCoord::create_with_arc_index(3, 2);
+        let coord = CircleCoord::create_with_arc_index(3, 9);
         let neighbours = maze.accessible_neighbours(&coord);
 
-        assert!(!neighbours.is_empty());
+        assert_eq!(neighbours.len(), 3);
+        assert!(neighbours.contains(&CircleCoord::create_with_arc_index(2, 9)));
+        assert!(neighbours.contains(&CircleCoord::create_with_arc_index(4, 18)));
+        assert!(neighbours.contains(&CircleCoord::create_with_arc_index(4, 19)));
     }
 }
