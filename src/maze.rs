@@ -280,6 +280,8 @@ mod tests {
         let coord = CircleCoord::create_with_arc_index(3, 10);
         let neighbours = maze.accessible_neighbours(&coord);
 
-        assert!(!neighbours.is_empty());
+        assert_eq!(neighbours.len(), 2);
+        assert!(neighbours.contains(&CircleCoord::create_with_arc_index(2, 10)));
+        assert!(neighbours.contains(&CircleCoord::create_with_arc_index(4, 20)));
     }
 }
