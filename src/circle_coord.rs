@@ -1,4 +1,5 @@
 use fraction::Fraction;
+use std::hash::{Hash, Hasher};
 
 const ANGLE_FULL_CIRCLE: usize = 360;
 
@@ -24,6 +25,13 @@ impl PartialEq for CircleCoord {
 
 impl Eq for CircleCoord {}
 
+impl Hash for CircleCoord {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.circle.hash(state);
+        self.arc_index.hash(state);
+    }
+}
+
 impl CircleCoord {
     pub fn new(circle: usize, arc_index: usize, angle: Fraction) -> Self {
         CircleCoord {
@@ -41,7 +49,8 @@ impl CircleCoord {
     pub fn create_with_fraction(circle: usize, angle: Fraction) -> Self {
         let step = calc_angle_step(circle);
         let arc_index_fraction = angle / step;
-        let arc_index = *arc_index_fraction.numer().unwrap() as usize;
+        let arc_index = (*arc_index_fraction.numer().unwrap() /
+                        *arc_index_fraction.denom().unwrap()) as usize;
         Self::new(circle, arc_index, angle)
     }
 
@@ -254,7 +263,7 @@ mod tests {
         let prev = coord1_1.next_in();
         assert_eq!(prev.circle, 0);
         assert_eq!(prev.angle, Fraction::from(60));
-        assert_eq!(prev.arc_index, 1);
+        assert_eq!(prev.arc_index, 0);
 
         let coord2_2 = CircleCoord::create_with_arc_index(2, 2);
         let prev = coord2_2.next_in();

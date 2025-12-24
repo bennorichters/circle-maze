@@ -244,6 +244,7 @@ mod tests {
     fn test_factory_creates_spanning_tree() {
         use rand::SeedableRng;
         use rand::rngs::StdRng;
+        use std::collections::HashSet;
 
         let circles = 5;
         let mut rng = StdRng::seed_from_u64(42);
@@ -258,6 +259,31 @@ mod tests {
             vertice_count,
             maze.arcs().len() + maze.lines().len(),
             "Maze should form a spanning tree"
+        );
+
+        let mut visited = HashSet::new();
+        let mut stack = vec![CircleCoord::create_with_arc_index(0, 0)];
+
+        while let Some(v) = stack.pop() {
+            if visited.contains(&v) {
+                continue;
+            }
+            let neighbors = maze.accessible_neighbours(&v);
+            visited.insert(v);
+            for neighbor in neighbors {
+                stack.push(neighbor);
+            }
+        }
+
+        let mut reachable_vertice_count = 1;
+        for c in 1..circles {
+            reachable_vertice_count += calc_total_arcs(c);
+        }
+
+        assert_eq!(
+            visited.len(),
+            reachable_vertice_count,
+            "All reachable vertices should be visited"
         );
     }
 
