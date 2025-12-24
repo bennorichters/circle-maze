@@ -38,6 +38,17 @@ impl Maze {
             neighbours.push(next_cw);
         }
 
+        if !self.arcs.contains(coord) {
+            neighbours.push(coord.next_in());
+        }
+
+        if calc_total_arcs(coord.circle()) == calc_total_arcs(coord.circle() + 1) {
+            let next_out = coord.next_out();
+            if !self.arcs.contains(&next_out) {
+                neighbours.push(next_out);
+            }
+        }
+
         neighbours
     }
 }
