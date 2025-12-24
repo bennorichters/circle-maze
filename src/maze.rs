@@ -1,5 +1,5 @@
 use crate::circle_coord::{CircleCoord, calc_total_arcs};
-use rand::{seq::SliceRandom, Rng};
+use rand::{Rng, seq::SliceRandom};
 use serde_json::Value;
 
 #[derive(Debug)]
@@ -42,11 +42,15 @@ impl Maze {
             neighbours.push(coord.next_in());
         }
 
-        if calc_total_arcs(coord.circle()) == calc_total_arcs(coord.circle() + 1) {
-            let next_out = coord.next_out();
-            if !self.arcs.contains(&next_out) {
-                neighbours.push(next_out);
+        let next_out = coord.next_out();
+        if calc_total_arcs(coord.circle()) < calc_total_arcs(coord.circle() + 1) {
+            let next_out_cw = next_out.next_clockwise();
+            if !self.arcs.contains(&next_out_cw) {
+                neighbours.push(next_out_cw);
             }
+        }
+        if !self.arcs.contains(&next_out) {
+            neighbours.push(next_out);
         }
 
         neighbours
