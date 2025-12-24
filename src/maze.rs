@@ -21,6 +21,10 @@ impl Maze {
     pub fn lines(&self) -> &Vec<CircleCoord> {
         &self.lines
     }
+
+    pub fn accessible_neighbours(&self, coord: &CircleCoord) -> Vec<CircleCoord> {
+        todo!()
+    }
 }
 
 pub fn factory<R: Rng>(circles: usize, rng: &mut R) -> Maze {

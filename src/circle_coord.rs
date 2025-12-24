@@ -75,10 +75,6 @@ impl CircleCoord {
     pub fn next_in(&self) -> Self {
         Self::create_with_fraction(self.circle - 1, self.angle)
     }
-
-    pub fn accessible_neighbours(&self) -> Vec<CircleCoord> {
-        todo!()
-    }
 }
 
 pub fn calc_total_arcs(circle: usize) -> usize {
