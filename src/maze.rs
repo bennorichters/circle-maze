@@ -1,12 +1,12 @@
-use crate::circle_coord::{CircleCoordinate, calc_total_arcs};
+use crate::circle_coord::{CircleCoord, calc_total_arcs};
 use rand::{seq::SliceRandom, Rng};
 use serde_json::Value;
 
 #[derive(Debug)]
 pub struct Maze {
     circles: usize,
-    arcs: Vec<CircleCoordinate>,
-    lines: Vec<CircleCoordinate>,
+    arcs: Vec<CircleCoord>,
+    lines: Vec<CircleCoord>,
 }
 
 impl Maze {
@@ -14,11 +14,11 @@ impl Maze {
         self.circles
     }
 
-    pub fn arcs(&self) -> &Vec<CircleCoordinate> {
+    pub fn arcs(&self) -> &Vec<CircleCoord> {
         &self.arcs
     }
 
-    pub fn lines(&self) -> &Vec<CircleCoordinate> {
+    pub fn lines(&self) -> &Vec<CircleCoord> {
         &self.lines
     }
 }
@@ -39,8 +39,8 @@ pub fn factory<R: Rng>(circles: usize, rng: &mut R) -> Maze {
     }
     free.shuffle(rng);
 
-    let mut lines: Vec<CircleCoordinate> = vec![];
-    let mut arcs: Vec<CircleCoordinate> = vec![];
+    let mut lines: Vec<CircleCoord> = vec![];
+    let mut arcs: Vec<CircleCoord> = vec![];
     for f in free {
         let mut index = (f.0 - 1) * outer + f.1;
         if used[index] {
@@ -49,14 +49,14 @@ pub fn factory<R: Rng>(circles: usize, rng: &mut R) -> Maze {
 
         path.fill(false);
 
-        let mut coord = CircleCoordinate::create_with_arc_index(f.0, f.1);
+        let mut coord = CircleCoord::create_with_arc_index(f.0, f.1);
         let mut options: Vec<(usize, usize, bool)> = vec![(f.0, f.1, false), (f.0, f.1, true)];
         loop {
             path[index] = true;
             used[index] = true;
 
             let mut opt: (usize, usize, bool);
-            let mut next: CircleCoordinate;
+            let mut next: CircleCoord;
             loop {
                 let opt_index = rng.random_range(0..options.len());
                 opt = options.swap_remove(opt_index);
@@ -90,7 +90,7 @@ pub fn factory<R: Rng>(circles: usize, rng: &mut R) -> Maze {
     }
 
     for i in 0..outer {
-        arcs.push(CircleCoordinate::create_with_arc_index(circles, i));
+        arcs.push(CircleCoord::create_with_arc_index(circles, i));
     }
 
     Maze {
@@ -141,7 +141,7 @@ impl MazeDeserializer {
                 .as_u64()
                 .ok_or(format!("arcs[{}].arc must be a number", i))? as usize;
 
-            let coord = CircleCoordinate::create_with_arc_index(circle, arc);
+            let coord = CircleCoord::create_with_arc_index(circle, arc);
             arcs.push(coord);
         }
 
@@ -173,7 +173,7 @@ impl MazeDeserializer {
                 .ok_or(format!("lines[{}].arc must be a number", i))?
                 as usize;
 
-            let coord = CircleCoordinate::create_with_arc_index(circle, arc);
+            let coord = CircleCoord::create_with_arc_index(circle, arc);
             lines.push(coord);
         }
 

@@ -10,23 +10,23 @@ const ANGULAR_DIVISOR_FIRST_CIRCLE: usize = 60;
 const ARCS_FIRST_CIRCLE: usize = ANGLE_FULL_CIRCLE / ANGULAR_DIVISOR_FIRST_CIRCLE;
 
 #[derive(Debug, Clone)]
-pub struct CircleCoordinate {
+pub struct CircleCoord {
     circle: usize,
     arc_index: usize,
     angle: Fraction,
 }
 
-impl PartialEq for CircleCoordinate {
+impl PartialEq for CircleCoord {
     fn eq(&self, other: &Self) -> bool {
         self.circle == other.circle && self.arc_index == other.arc_index
     }
 }
 
-impl Eq for CircleCoordinate {}
+impl Eq for CircleCoord {}
 
-impl CircleCoordinate {
+impl CircleCoord {
     pub fn new(circle: usize, arc_index: usize, angle: Fraction) -> Self {
-        CircleCoordinate {
+        CircleCoord {
             circle,
             arc_index,
             angle,
@@ -130,100 +130,100 @@ mod tests {
 
     #[test]
     fn test_create_with_arc_index() {
-        let coord0 = CircleCoordinate::create_with_arc_index(0, 0);
+        let coord0 = CircleCoord::create_with_arc_index(0, 0);
         assert_eq!(coord0.angle, Fraction::from(0));
 
-        let coord1 = CircleCoordinate::create_with_arc_index(0, 1);
+        let coord1 = CircleCoord::create_with_arc_index(0, 1);
         assert_eq!(coord1.angle, Fraction::from(60));
 
-        let coord2 = CircleCoordinate::create_with_arc_index(0, 2);
+        let coord2 = CircleCoord::create_with_arc_index(0, 2);
         assert_eq!(coord2.angle, Fraction::from(120));
 
-        let coord3 = CircleCoordinate::create_with_arc_index(0, 3);
+        let coord3 = CircleCoord::create_with_arc_index(0, 3);
         assert_eq!(coord3.angle, Fraction::from(180));
 
-        let coord4 = CircleCoordinate::create_with_arc_index(0, 4);
+        let coord4 = CircleCoord::create_with_arc_index(0, 4);
         assert_eq!(coord4.angle, Fraction::from(240));
 
-        let coord5 = CircleCoordinate::create_with_arc_index(0, 5);
+        let coord5 = CircleCoord::create_with_arc_index(0, 5);
         assert_eq!(coord5.angle, Fraction::from(300));
 
-        let coord0_c1 = CircleCoordinate::create_with_arc_index(1, 0);
+        let coord0_c1 = CircleCoord::create_with_arc_index(1, 0);
         assert_eq!(coord0_c1.angle, Fraction::from(0));
 
-        let coord1_c1 = CircleCoordinate::create_with_arc_index(1, 1);
+        let coord1_c1 = CircleCoord::create_with_arc_index(1, 1);
         assert_eq!(coord1_c1.angle, Fraction::from(60));
 
-        let coord2_c1 = CircleCoordinate::create_with_arc_index(1, 2);
+        let coord2_c1 = CircleCoord::create_with_arc_index(1, 2);
         assert_eq!(coord2_c1.angle, Fraction::from(120));
 
-        let coord3_c1 = CircleCoordinate::create_with_arc_index(1, 3);
+        let coord3_c1 = CircleCoord::create_with_arc_index(1, 3);
         assert_eq!(coord3_c1.angle, Fraction::from(180));
 
-        let coord4_c1 = CircleCoordinate::create_with_arc_index(1, 4);
+        let coord4_c1 = CircleCoord::create_with_arc_index(1, 4);
         assert_eq!(coord4_c1.angle, Fraction::from(240));
 
-        let coord5_c1 = CircleCoordinate::create_with_arc_index(1, 5);
+        let coord5_c1 = CircleCoord::create_with_arc_index(1, 5);
         assert_eq!(coord5_c1.angle, Fraction::from(300));
 
-        let coord1_c10 = CircleCoordinate::create_with_arc_index(10, 1);
+        let coord1_c10 = CircleCoord::create_with_arc_index(10, 1);
         assert_eq!(coord1_c10.angle, Fraction::new(360u64, 48u64));
     }
 
     #[test]
     fn test_create_with_fraction() {
-        let coord0 = CircleCoordinate::create_with_fraction(0, Fraction::from(0));
+        let coord0 = CircleCoord::create_with_fraction(0, Fraction::from(0));
         assert_eq!(coord0.arc_index, 0);
 
-        let coord1 = CircleCoordinate::create_with_fraction(0, Fraction::from(60));
+        let coord1 = CircleCoord::create_with_fraction(0, Fraction::from(60));
         assert_eq!(coord1.arc_index, 1);
 
-        let coord2 = CircleCoordinate::create_with_fraction(0, Fraction::from(120));
+        let coord2 = CircleCoord::create_with_fraction(0, Fraction::from(120));
         assert_eq!(coord2.arc_index, 2);
 
-        let coord3 = CircleCoordinate::create_with_fraction(0, Fraction::from(180));
+        let coord3 = CircleCoord::create_with_fraction(0, Fraction::from(180));
         assert_eq!(coord3.arc_index, 3);
 
-        let coord4 = CircleCoordinate::create_with_fraction(0, Fraction::from(240));
+        let coord4 = CircleCoord::create_with_fraction(0, Fraction::from(240));
         assert_eq!(coord4.arc_index, 4);
 
-        let coord5 = CircleCoordinate::create_with_fraction(0, Fraction::from(300));
+        let coord5 = CircleCoord::create_with_fraction(0, Fraction::from(300));
         assert_eq!(coord5.arc_index, 5);
     }
 
     #[test]
     fn test_next_clockwise() {
-        let coord0 = CircleCoordinate::create_with_arc_index(0, 0);
+        let coord0 = CircleCoord::create_with_arc_index(0, 0);
         let next = coord0.next_clockwise().unwrap();
         assert_eq!(next.circle, 0);
         assert_eq!(next.arc_index, 1);
         assert_eq!(next.angle, Fraction::from(60));
 
-        let coord1 = CircleCoordinate::create_with_arc_index(0, 1);
+        let coord1 = CircleCoord::create_with_arc_index(0, 1);
         let next = coord1.next_clockwise().unwrap();
         assert_eq!(next.circle, 0);
         assert_eq!(next.arc_index, 2);
         assert_eq!(next.angle, Fraction::from(120));
 
-        let coord5 = CircleCoordinate::create_with_arc_index(0, 5);
+        let coord5 = CircleCoord::create_with_arc_index(0, 5);
         let next = coord5.next_clockwise().unwrap();
         assert_eq!(next.circle, 0);
         assert_eq!(next.arc_index, 0);
         assert_eq!(next.angle, Fraction::from(0));
 
-        let coord2_0 = CircleCoordinate::create_with_arc_index(2, 0);
+        let coord2_0 = CircleCoord::create_with_arc_index(2, 0);
         let next = coord2_0.next_clockwise().unwrap();
         assert_eq!(next.circle, 2);
         assert_eq!(next.arc_index, 1);
         assert_eq!(next.angle, Fraction::from(30));
 
-        let coord2_11 = CircleCoordinate::create_with_arc_index(2, 11);
+        let coord2_11 = CircleCoord::create_with_arc_index(2, 11);
         let next = coord2_11.next_clockwise().unwrap();
         assert_eq!(next.circle, 2);
         assert_eq!(next.arc_index, 0);
         assert_eq!(next.angle, Fraction::from(0));
 
-        let coord4_23 = CircleCoordinate::create_with_arc_index(4, 23);
+        let coord4_23 = CircleCoord::create_with_arc_index(4, 23);
         let next = coord4_23.next_clockwise().unwrap();
         assert_eq!(next.circle, 4);
         assert_eq!(next.arc_index, 0);
@@ -232,31 +232,31 @@ mod tests {
 
     #[test]
     fn test_next_out() {
-        let coord0_0 = CircleCoordinate::create_with_arc_index(0, 0);
+        let coord0_0 = CircleCoord::create_with_arc_index(0, 0);
         let next = coord0_0.next_out().unwrap();
         assert_eq!(next.circle, 1);
         assert_eq!(next.arc_index, 0);
         assert_eq!(next.angle, Fraction::from(0));
 
-        let coord0_1 = CircleCoordinate::create_with_arc_index(0, 1);
+        let coord0_1 = CircleCoord::create_with_arc_index(0, 1);
         let next = coord0_1.next_out().unwrap();
         assert_eq!(next.circle, 1);
         assert_eq!(next.angle, Fraction::from(60));
         assert_eq!(next.arc_index, 1);
 
-        let coord1_1 = CircleCoordinate::create_with_arc_index(1, 1);
+        let coord1_1 = CircleCoord::create_with_arc_index(1, 1);
         let next = coord1_1.next_out().unwrap();
         assert_eq!(next.circle, 2);
         assert_eq!(next.angle, Fraction::from(60));
         assert_eq!(next.arc_index, 2);
 
-        let coord2_4 = CircleCoordinate::create_with_arc_index(2, 4);
+        let coord2_4 = CircleCoord::create_with_arc_index(2, 4);
         let next = coord2_4.next_out().unwrap();
         assert_eq!(next.circle, 3);
         assert_eq!(next.angle, Fraction::from(120));
         assert_eq!(next.arc_index, 4);
 
-        let coord3_3 = CircleCoordinate::create_with_arc_index(3, 3);
+        let coord3_3 = CircleCoord::create_with_arc_index(3, 3);
         let next = coord3_3.next_out().unwrap();
         assert_eq!(next.circle, 4);
         assert_eq!(next.angle, Fraction::from(90));
@@ -265,37 +265,37 @@ mod tests {
 
     #[test]
     fn test_next_counter_clockwise() {
-        let coord1 = CircleCoordinate::create_with_arc_index(0, 1);
+        let coord1 = CircleCoord::create_with_arc_index(0, 1);
         let prev = coord1.next_counter_clockwise().unwrap();
         assert_eq!(prev.circle, 0);
         assert_eq!(prev.arc_index, 0);
         assert_eq!(prev.angle, Fraction::from(0));
 
-        let coord2 = CircleCoordinate::create_with_arc_index(0, 2);
+        let coord2 = CircleCoord::create_with_arc_index(0, 2);
         let prev = coord2.next_counter_clockwise().unwrap();
         assert_eq!(prev.circle, 0);
         assert_eq!(prev.arc_index, 1);
         assert_eq!(prev.angle, Fraction::from(60));
 
-        let coord0 = CircleCoordinate::create_with_arc_index(0, 0);
+        let coord0 = CircleCoord::create_with_arc_index(0, 0);
         let prev = coord0.next_counter_clockwise().unwrap();
         assert_eq!(prev.circle, 0);
         assert_eq!(prev.arc_index, 5);
         assert_eq!(prev.angle, Fraction::from(300));
 
-        let coord2_0 = CircleCoordinate::create_with_arc_index(2, 0);
+        let coord2_0 = CircleCoord::create_with_arc_index(2, 0);
         let prev = coord2_0.next_counter_clockwise().unwrap();
         assert_eq!(prev.circle, 2);
         assert_eq!(prev.arc_index, 11);
         assert_eq!(prev.angle, Fraction::from(330));
 
-        let coord2_5 = CircleCoordinate::create_with_arc_index(2, 5);
+        let coord2_5 = CircleCoord::create_with_arc_index(2, 5);
         let prev = coord2_5.next_counter_clockwise().unwrap();
         assert_eq!(prev.circle, 2);
         assert_eq!(prev.arc_index, 4);
         assert_eq!(prev.angle, Fraction::from(120));
 
-        let coord4_0 = CircleCoordinate::create_with_arc_index(4, 0);
+        let coord4_0 = CircleCoord::create_with_arc_index(4, 0);
         let prev = coord4_0.next_counter_clockwise().unwrap();
         assert_eq!(prev.circle, 4);
         assert_eq!(prev.arc_index, 23);
@@ -304,37 +304,37 @@ mod tests {
 
     #[test]
     fn test_next_in() {
-        let coord1_0 = CircleCoordinate::create_with_arc_index(1, 0);
+        let coord1_0 = CircleCoord::create_with_arc_index(1, 0);
         let prev = coord1_0.next_in().unwrap();
         assert_eq!(prev.circle, 0);
         assert_eq!(prev.arc_index, 0);
         assert_eq!(prev.angle, Fraction::from(0));
 
-        let coord1_1 = CircleCoordinate::create_with_arc_index(1, 1);
+        let coord1_1 = CircleCoord::create_with_arc_index(1, 1);
         let prev = coord1_1.next_in().unwrap();
         assert_eq!(prev.circle, 0);
         assert_eq!(prev.angle, Fraction::from(60));
         assert_eq!(prev.arc_index, 1);
 
-        let coord2_2 = CircleCoordinate::create_with_arc_index(2, 2);
+        let coord2_2 = CircleCoord::create_with_arc_index(2, 2);
         let prev = coord2_2.next_in().unwrap();
         assert_eq!(prev.circle, 1);
         assert_eq!(prev.angle, Fraction::from(60));
         assert_eq!(prev.arc_index, 1);
 
-        let coord3_4 = CircleCoordinate::create_with_arc_index(3, 4);
+        let coord3_4 = CircleCoord::create_with_arc_index(3, 4);
         let prev = coord3_4.next_in().unwrap();
         assert_eq!(prev.circle, 2);
         assert_eq!(prev.angle, Fraction::from(120));
         assert_eq!(prev.arc_index, 4);
 
-        let coord4_6 = CircleCoordinate::create_with_arc_index(4, 6);
+        let coord4_6 = CircleCoord::create_with_arc_index(4, 6);
         let prev = coord4_6.next_in().unwrap();
         assert_eq!(prev.circle, 3);
         assert_eq!(prev.angle, Fraction::from(90));
         assert_eq!(prev.arc_index, 3);
 
-        let coord0_0 = CircleCoordinate::create_with_arc_index(0, 0);
+        let coord0_0 = CircleCoord::create_with_arc_index(0, 0);
         let result = coord0_0.next_in();
         assert!(result.is_none());
     }

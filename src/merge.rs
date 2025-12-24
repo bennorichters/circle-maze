@@ -1,15 +1,15 @@
-use crate::circle_coord::CircleCoordinate;
+use crate::circle_coord::CircleCoord;
 use crate::maze::Maze;
 
 fn merge_coordinates<F>(
-    coordinates: &[CircleCoordinate],
+    coordinates: &[CircleCoord],
     get_next: F,
     allow_closed: bool,
-) -> Vec<(CircleCoordinate, CircleCoordinate)>
+) -> Vec<(CircleCoord, CircleCoord)>
 where
-    F: Fn(&CircleCoordinate) -> Option<CircleCoordinate>,
+    F: Fn(&CircleCoord) -> Option<CircleCoord>,
 {
-    let mut result: Vec<(CircleCoordinate, CircleCoordinate)> = Vec::new();
+    let mut result: Vec<(CircleCoord, CircleCoord)> = Vec::new();
 
     for coord in coordinates.iter() {
         let start = coord.clone();
@@ -48,11 +48,11 @@ where
     result
 }
 
-pub fn merge_lines(maze: &Maze) -> Vec<(CircleCoordinate, CircleCoordinate)> {
+pub fn merge_lines(maze: &Maze) -> Vec<(CircleCoord, CircleCoord)> {
     merge_coordinates(maze.lines(), |line| line.next_out(), false)
 }
 
-pub fn merge_arcs(maze: &Maze) -> Vec<(CircleCoordinate, CircleCoordinate)> {
+pub fn merge_arcs(maze: &Maze) -> Vec<(CircleCoord, CircleCoord)> {
     merge_coordinates(maze.arcs(), |arc| arc.next_clockwise(), true)
 }
 
