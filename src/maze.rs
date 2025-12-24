@@ -284,4 +284,17 @@ mod tests {
         assert!(neighbours.contains(&CircleCoord::create_with_arc_index(2, 10)));
         assert!(neighbours.contains(&CircleCoord::create_with_arc_index(4, 20)));
     }
+
+    #[test]
+    fn test_accessible_neighbours_arc_11() {
+        let json_str = include_str!("../tests/fixtures/maze_5_circles.json");
+        let json_data: Value = serde_json::from_str(json_str).unwrap();
+
+        let maze = MazeDeserializer::deserialize(json_data).unwrap();
+        let coord = CircleCoord::create_with_arc_index(3, 11);
+        let neighbours = maze.accessible_neighbours(&coord);
+
+        assert_eq!(neighbours.len(), 1);
+        assert!(neighbours.contains(&CircleCoord::create_with_arc_index(3, 0)));
+    }
 }
