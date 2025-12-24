@@ -56,8 +56,17 @@ impl Maze {
         neighbours
     }
 
-    fn accessible_neighbours_circle_0(&self, coord: &CircleCoord) -> Vec<CircleCoord> {
-        todo!()
+    fn accessible_neighbours_circle_0(&self, _coord: &CircleCoord) -> Vec<CircleCoord> {
+        let mut neighbours = Vec::new();
+
+        for arc_index in 0..6 {
+            let coord = CircleCoord::create_with_arc_index(1, arc_index);
+            if !self.arcs.contains(&coord) {
+                neighbours.push(coord);
+            }
+        }
+
+        neighbours
     }
 
     fn accessible_neighbours_circle_1(&self, coord: &CircleCoord) -> Vec<CircleCoord> {
