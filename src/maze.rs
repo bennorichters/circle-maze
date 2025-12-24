@@ -100,7 +100,9 @@ fn generate_shuffled_coordinates<R: Rng>(circles: usize, rng: &mut R) -> Vec<(us
 
 enum Direction {
     Out,
+    In,
     Clockwise,
+    CounterClockwise,
 }
 
 fn perform_random_walk<R: Rng>(
@@ -117,6 +119,7 @@ fn perform_random_walk<R: Rng>(
     let mut coord = CircleCoord::create_with_arc_index(start.0, start.1);
     let mut options: Vec<(usize, usize, Direction)> = vec![
         (start.0, start.1, Direction::Clockwise),
+        (start.0, start.1, Direction::CounterClockwise),
         (start.0, start.1, Direction::Out),
     ];
     let mut index = coord_to_index(start.0, start.1, outer);
@@ -133,8 +136,11 @@ fn perform_random_walk<R: Rng>(
 
             next = match opt.2 {
                 Direction::Out => coord.next_out(),
+                Direction::In => coord.next_in(),
                 Direction::Clockwise => coord.next_clockwise(),
+                Direction::CounterClockwise => coord.next_counter_clockwise(),
             };
+
             index = coord_to_index(next.circle(), next.arc_index(), outer);
 
             if !path[index] {
@@ -143,8 +149,8 @@ fn perform_random_walk<R: Rng>(
         }
 
         match opt.2 {
-            Direction::Out => lines.push(coord),
-            Direction::Clockwise => arcs.push(coord),
+            Direction::Out | Direction::In => lines.push(coord),
+            Direction::Clockwise | Direction::CounterClockwise => arcs.push(coord),
         }
 
         if used[index] {
@@ -153,6 +159,7 @@ fn perform_random_walk<R: Rng>(
 
         coord = next;
         options.push((coord.circle(), coord.arc_index(), Direction::Clockwise));
+        options.push((coord.circle(), coord.arc_index(), Direction::CounterClockwise));
         options.push((coord.circle(), coord.arc_index(), Direction::Out));
     }
 }
