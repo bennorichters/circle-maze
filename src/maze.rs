@@ -257,7 +257,7 @@ mod tests {
     }
 
     #[test]
-    fn test_accessible_neighbours() {
+    fn test_accessible_neighbours_9() {
         let json_str = include_str!("../tests/fixtures/maze_5_circles.json");
         let json_data: Value = serde_json::from_str(json_str).unwrap();
 
