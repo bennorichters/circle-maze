@@ -23,8 +23,12 @@ impl Maze {
     }
 
     pub fn accessible_neighbours(&self, coord: &CircleCoord) -> Vec<CircleCoord> {
-        if coord.circle() < 2 {
-            return vec![];
+        if coord.circle() == 0 {
+            return self.accessible_neighbours_circle_0(coord);
+        }
+
+        if coord.circle() == 1 {
+            return self.accessible_neighbours_circle_1(coord);
         }
 
         let mut neighbours = Vec::new();
