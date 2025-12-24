@@ -50,13 +50,25 @@ fn render_arcs(maze: &Maze) -> String {
             let start_angle = start.angle();
             let end_angle = end.angle();
 
+            let start_degrees = (*start_angle.numer().unwrap() as f64)
+                / (*start_angle.denom().unwrap() as f64);
+            let end_degrees = (*end_angle.numer().unwrap() as f64)
+                / (*end_angle.denom().unwrap() as f64);
+
+            let mut angle_diff = end_degrees - start_degrees;
+            if angle_diff < 0.0 {
+                angle_diff += 360.0;
+            }
+
+            let large_arc_flag = if angle_diff > 180.0 { 1 } else { 0 };
+
             let (start_x, start_y) = polar_to_cartesian(radius, start_angle);
             let (end_x, end_y) = polar_to_cartesian(radius, end_angle);
 
             content.push_str(&format!(
-                r#"  <path d="M {:.2},{:.2} A {},{} 0 0 1 {:.2},{:.2}"/>
+                r#"  <path d="M {:.2},{:.2} A {},{} 0 {} 1 {:.2},{:.2}"/>
 "#,
-                start_x, start_y, radius, radius, end_x, end_y
+                start_x, start_y, radius, radius, large_arc_flag, end_x, end_y
             ));
         }
     }
