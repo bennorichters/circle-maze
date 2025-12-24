@@ -98,6 +98,11 @@ fn generate_shuffled_coordinates<R: Rng>(circles: usize, rng: &mut R) -> Vec<(us
     free
 }
 
+enum Direction {
+    Out,
+    Clockwise,
+}
+
 fn perform_random_walk<R: Rng>(
     start: (usize, usize),
     outer: usize,
@@ -110,24 +115,25 @@ fn perform_random_walk<R: Rng>(
     path.fill(false);
 
     let mut coord = CircleCoord::create_with_arc_index(start.0, start.1);
-    let mut options: Vec<(usize, usize, bool)> =
-        vec![(start.0, start.1, false), (start.0, start.1, true)];
+    let mut options: Vec<(usize, usize, Direction)> = vec![
+        (start.0, start.1, Direction::Clockwise),
+        (start.0, start.1, Direction::Out),
+    ];
     let mut index = coord_to_index(start.0, start.1, outer);
 
     loop {
         path[index] = true;
         used[index] = true;
 
-        let mut opt: (usize, usize, bool);
+        let mut opt: (usize, usize, Direction);
         let mut next: CircleCoord;
         loop {
             let opt_index = rng.random_range(0..options.len());
             opt = options.swap_remove(opt_index);
 
-            next = if opt.2 {
-                coord.next_out()
-            } else {
-                coord.next_clockwise()
+            next = match opt.2 {
+                Direction::Out => coord.next_out(),
+                Direction::Clockwise => coord.next_clockwise(),
             };
             index = coord_to_index(next.circle(), next.arc_index(), outer);
 
@@ -136,10 +142,9 @@ fn perform_random_walk<R: Rng>(
             }
         }
 
-        if opt.2 {
-            lines.push(coord);
-        } else {
-            arcs.push(coord);
+        match opt.2 {
+            Direction::Out => lines.push(coord),
+            Direction::Clockwise => arcs.push(coord),
         }
 
         if used[index] {
@@ -147,8 +152,8 @@ fn perform_random_walk<R: Rng>(
         }
 
         coord = next;
-        options.push((coord.circle(), coord.arc_index(), false));
-        options.push((coord.circle(), coord.arc_index(), true));
+        options.push((coord.circle(), coord.arc_index(), Direction::Clockwise));
+        options.push((coord.circle(), coord.arc_index(), Direction::Out));
     }
 }
 
