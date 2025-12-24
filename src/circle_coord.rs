@@ -61,9 +61,6 @@ impl CircleCoord {
     }
 
     pub fn next_in(&self) -> Option<Self> {
-        if self.circle == 0 {
-            return None;
-        }
         Some(Self::create_with_fraction(self.circle - 1, self.angle))
     }
 
