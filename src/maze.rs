@@ -101,8 +101,8 @@ fn generate_shuffled_coordinates<R: Rng>(circles: usize, rng: &mut R) -> Vec<(us
 fn perform_random_walk<R: Rng>(
     start: (usize, usize),
     outer: usize,
-    path: &mut Vec<bool>,
-    used: &mut Vec<bool>,
+    path: &mut [bool],
+    used: &mut [bool],
     lines: &mut Vec<CircleCoord>,
     arcs: &mut Vec<CircleCoord>,
     rng: &mut R,
@@ -154,8 +154,8 @@ fn perform_random_walk<R: Rng>(
 fn build_spanning_tree<R: Rng>(
     free: Vec<(usize, usize)>,
     outer: usize,
-    path: &mut Vec<bool>,
-    used: &mut Vec<bool>,
+    path: &mut [bool],
+    used: &mut [bool],
     rng: &mut R,
 ) -> (Vec<CircleCoord>, Vec<CircleCoord>) {
     let mut lines = Vec::new();
