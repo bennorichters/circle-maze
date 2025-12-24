@@ -100,17 +100,6 @@ pub fn factory<R: Rng>(circles: usize, rng: &mut R) -> Maze {
     }
 }
 
-fn all_coords(circle: usize) -> Vec<CircleCoordinate> {
-    (1..=circle).flat_map(coordinates_for_circle).collect()
-}
-
-fn coordinates_for_circle(circle: usize) -> Vec<CircleCoordinate> {
-    let total = calc_total_arcs(circle);
-    (0..total)
-        .map(|i| CircleCoordinate::create_with_arc_index(circle, i))
-        .collect()
-}
-
 pub struct MazeDeserializer;
 
 impl MazeDeserializer {

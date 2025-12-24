@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::{json_maze::parse_json_file, maze::{MazeDeserializer, factory}, svg::render};
 use clap::Parser;
 
