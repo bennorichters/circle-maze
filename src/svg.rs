@@ -25,15 +25,6 @@ pub fn render(maze: &Maze) -> std::io::Result<()> {
     svg_content.push_str(&render_arcs(maze));
     svg_content.push_str(&render_lines(maze));
 
-    let polar_radius = 35;
-    let polar_angle = fraction::Fraction::new(135u64, 2u64);
-    let (cx, cy) = polar_to_cartesian(polar_radius, &polar_angle);
-    svg_content.push_str(&format!(
-        r#"  <circle cx="{:.2}" cy="{:.2}" r="3" fill="red"/>
-"#,
-        cx, cy
-    ));
-
     svg_content.push_str("</g>\n</svg>\n");
 
     let mut file = File::create("maze.svg")?;
