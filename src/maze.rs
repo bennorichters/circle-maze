@@ -191,6 +191,27 @@ mod tests {
     use serde_json::json;
 
     #[test]
+    fn test_factory_creates_spanning_tree() {
+        use rand::SeedableRng;
+        use rand::rngs::StdRng;
+
+        let circles = 5;
+        let mut rng = StdRng::seed_from_u64(42);
+        let maze = factory(circles, &mut rng);
+
+        let mut vertice_count = 0;
+        for c in 1..=circles {
+            vertice_count += calc_total_arcs(c);
+        }
+
+        assert_eq!(
+            vertice_count,
+            maze.arcs().len() + maze.lines().len(),
+            "Maze should form a spanning tree"
+        );
+    }
+
+    #[test]
     fn test_deserialize_maze_with_three_circles() {
         let json_data = json!({
             "circles": 3,
