@@ -246,45 +246,54 @@ mod tests {
         use rand::rngs::StdRng;
         use std::collections::HashSet;
 
-        let circles = 5;
-        let mut rng = StdRng::seed_from_u64(42);
-        let maze = factory(circles, &mut rng);
+        let seeds = [42, 123, 456, 789, 1024];
 
-        let mut vertice_count = 0;
-        for c in 1..=circles {
-            vertice_count += calc_total_arcs(c);
-        }
+        for circles in 3..10 {
+            for &seed in &seeds {
+                let mut rng = StdRng::seed_from_u64(seed);
+                let maze = factory(circles, &mut rng);
 
-        assert_eq!(
-            vertice_count,
-            maze.arcs().len() + maze.lines().len(),
-            "Maze should form a spanning tree"
-        );
+                let mut vertice_count = 0;
+                for c in 1..=circles {
+                    vertice_count += calc_total_arcs(c);
+                }
 
-        let mut visited = HashSet::new();
-        let mut stack = vec![CircleCoord::create_with_arc_index(0, 0)];
+                assert_eq!(
+                    vertice_count,
+                    maze.arcs().len() + maze.lines().len(),
+                    "Maze with {} circles and seed {} should form a spanning tree",
+                    circles,
+                    seed
+                );
 
-        while let Some(v) = stack.pop() {
-            if visited.contains(&v) {
-                continue;
+                let mut visited = HashSet::new();
+                let mut stack = vec![CircleCoord::create_with_arc_index(0, 0)];
+
+                while let Some(v) = stack.pop() {
+                    if visited.contains(&v) {
+                        continue;
+                    }
+                    let neighbors = maze.accessible_neighbours(&v);
+                    visited.insert(v);
+                    for neighbor in neighbors {
+                        stack.push(neighbor);
+                    }
+                }
+
+                let mut reachable_vertice_count = 1;
+                for c in 1..circles {
+                    reachable_vertice_count += calc_total_arcs(c);
+                }
+
+                assert_eq!(
+                    visited.len(),
+                    reachable_vertice_count,
+                    "All reachable vertices should be visited for {} circles with seed {}",
+                    circles,
+                    seed
+                );
             }
-            let neighbors = maze.accessible_neighbours(&v);
-            visited.insert(v);
-            for neighbor in neighbors {
-                stack.push(neighbor);
-            }
         }
-
-        let mut reachable_vertice_count = 1;
-        for c in 1..circles {
-            reachable_vertice_count += calc_total_arcs(c);
-        }
-
-        assert_eq!(
-            visited.len(),
-            reachable_vertice_count,
-            "All reachable vertices should be visited"
-        );
     }
 
     #[test]
