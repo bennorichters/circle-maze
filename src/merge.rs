@@ -1,4 +1,4 @@
-use crate::building_blocks::CircleCoordinate;
+use crate::circle_coord::CircleCoordinate;
 use crate::maze::Maze;
 
 fn merge_coordinates<F>(

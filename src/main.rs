@@ -1,7 +1,7 @@
 use crate::{json_maze::parse_json_file, maze::{MazeDeserializer, factory}, svg::render};
 use clap::Parser;
 
-mod building_blocks;
+mod circle_coord;
 mod json_maze;
 mod maze;
 mod merge;

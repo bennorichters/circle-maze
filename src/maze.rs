@@ -1,4 +1,4 @@
-use crate::building_blocks::{CircleCoordinate, calc_total_arcs};
+use crate::circle_coord::{CircleCoordinate, calc_total_arcs};
 use rand::{seq::SliceRandom, Rng};
 use serde_json::Value;
 
