@@ -1,5 +1,5 @@
 use crate::building_blocks::{CircleCoordinate, calc_total_arcs};
-use rand::{rng, seq::SliceRandom, Rng};
+use rand::{seq::SliceRandom, Rng};
 use serde_json::Value;
 
 #[derive(Debug)]
@@ -23,7 +23,7 @@ impl Maze {
     }
 }
 
-pub fn factory(circles: usize) -> Maze {
+pub fn factory<R: Rng>(circles: usize, rng: &mut R) -> Maze {
     let outer = calc_total_arcs(circles);
     let total = outer * circles;
     let mut path: Vec<bool> = vec![false; total];
@@ -37,7 +37,7 @@ pub fn factory(circles: usize) -> Maze {
             free.push((c, arc_index));
         }
     }
-    free.shuffle(&mut rng());
+    free.shuffle(rng);
 
     let mut lines: Vec<CircleCoordinate> = vec![];
     let mut arcs: Vec<CircleCoordinate> = vec![];
@@ -58,7 +58,7 @@ pub fn factory(circles: usize) -> Maze {
             let mut opt: (usize, usize, bool);
             let mut next: CircleCoordinate;
             loop {
-                let opt_index = rand::rng().random_range(0..options.len());
+                let opt_index = rng.random_range(0..options.len());
                 opt = options.swap_remove(opt_index);
 
                 next = if opt.2 {

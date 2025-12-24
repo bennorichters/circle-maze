@@ -24,7 +24,7 @@ fn main() {
     let cli = Cli::parse();
 
     let maze = if let Some(circles) = cli.create {
-        factory(circles)
+        factory(circles, &mut rand::rng())
     } else if let Some(path) = cli.parse {
         let json_value = parse_json_file(&path)
             .expect("Failed to parse JSON file");
