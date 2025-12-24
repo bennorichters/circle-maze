@@ -70,7 +70,33 @@ impl Maze {
     }
 
     fn accessible_neighbours_circle_1(&self, coord: &CircleCoord) -> Vec<CircleCoord> {
-        todo!()
+        let mut neighbours = Vec::new();
+
+        if !self.lines.contains(coord) {
+            neighbours.push(coord.next_counter_clockwise());
+        }
+
+        let next_cw = coord.next_clockwise();
+        if !self.lines.contains(&next_cw) {
+            neighbours.push(next_cw);
+        }
+
+        if !self.arcs.contains(coord) {
+            neighbours.push(CircleCoord::create_with_arc_index(0, 0));
+        }
+
+        let next_out = coord.next_out();
+        if calc_total_arcs(coord.circle()) < calc_total_arcs(coord.circle() + 1) {
+            let next_out_cw = next_out.next_clockwise();
+            if !self.arcs.contains(&next_out_cw) {
+                neighbours.push(next_out_cw);
+            }
+        }
+        if !self.arcs.contains(&next_out) {
+            neighbours.push(next_out);
+        }
+
+        neighbours
     }
 }
 
