@@ -49,8 +49,8 @@ impl CircleCoord {
     pub fn create_with_fraction(circle: usize, angle: Fraction) -> Self {
         let step = calc_angle_step(circle);
         let arc_index_fraction = angle / step;
-        let arc_index = (*arc_index_fraction.numer().unwrap() /
-                        *arc_index_fraction.denom().unwrap()) as usize;
+        let arc_index =
+            (*arc_index_fraction.numer().unwrap() / *arc_index_fraction.denom().unwrap()) as usize;
         Self::new(circle, arc_index, angle)
     }
 

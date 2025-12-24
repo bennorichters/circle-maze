@@ -110,7 +110,8 @@ fn perform_random_walk<R: Rng>(
     path.fill(false);
 
     let mut coord = CircleCoord::create_with_arc_index(start.0, start.1);
-    let mut options: Vec<(usize, usize, bool)> = vec![(start.0, start.1, false), (start.0, start.1, true)];
+    let mut options: Vec<(usize, usize, bool)> =
+        vec![(start.0, start.1, false), (start.0, start.1, true)];
     let mut index = coord_to_index(start.0, start.1, outer);
 
     loop {

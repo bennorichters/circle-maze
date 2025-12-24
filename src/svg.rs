@@ -1,8 +1,8 @@
 use crate::maze::Maze;
 use crate::merge::{merge_arcs, merge_lines};
+use std::f64::consts::PI;
 use std::fs::File;
 use std::io::Write;
-use std::f64::consts::PI;
 
 pub fn render(maze: &Maze) -> std::io::Result<()> {
     let circles = maze.circles();
@@ -50,10 +50,10 @@ fn render_arcs(maze: &Maze) -> String {
             let start_angle = start.angle();
             let end_angle = end.angle();
 
-            let start_degrees = (*start_angle.numer().unwrap() as f64)
-                / (*start_angle.denom().unwrap() as f64);
-            let end_degrees = (*end_angle.numer().unwrap() as f64)
-                / (*end_angle.denom().unwrap() as f64);
+            let start_degrees =
+                (*start_angle.numer().unwrap() as f64) / (*start_angle.denom().unwrap() as f64);
+            let end_degrees =
+                (*end_angle.numer().unwrap() as f64) / (*end_angle.denom().unwrap() as f64);
 
             let mut angle_diff = end_degrees - start_degrees;
             if angle_diff < 0.0 {
@@ -108,5 +108,8 @@ fn polar_to_cartesian(radius: usize, angle: &fraction::Fraction) -> (f64, f64) {
     let angle_rad = angle_to_radians(angle);
     let x = radius as f64 * angle_rad.cos();
     let y = radius as f64 * angle_rad.sin();
-    (if x.abs() < 1e-10 { 0.0 } else { x }, if y.abs() < 1e-10 { 0.0 } else { y })
+    (
+        if x.abs() < 1e-10 { 0.0 } else { x },
+        if y.abs() < 1e-10 { 0.0 } else { y },
+    )
 }
