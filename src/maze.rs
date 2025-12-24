@@ -23,7 +23,22 @@ impl Maze {
     }
 
     pub fn accessible_neighbours(&self, coord: &CircleCoord) -> Vec<CircleCoord> {
-        todo!()
+        if coord.circle() < 2 {
+            return vec![];
+        }
+
+        let mut neighbours = Vec::new();
+
+        if !self.lines.contains(coord) {
+            neighbours.push(coord.next_counter_clockwise());
+        }
+
+        let next_cw = coord.next_clockwise();
+        if !self.lines.contains(&next_cw) {
+            neighbours.push(next_cw);
+        }
+
+        neighbours
     }
 }
 
