@@ -1,4 +1,4 @@
-use crate::circle_coord::CircleCoord;
+use crate::circle_coord::{calc_total_arcs, CircleCoord};
 use crate::maze::Maze;
 use crate::merge::{merge_arcs, merge_lines};
 use std::f64::consts::PI;
@@ -46,7 +46,8 @@ fn build_svg_content(
 
     if let (Some(start_coord), Some(end_coord)) = (start, end) {
         let start_radius = calc_display_radius(start_coord.circle());
-        let (start_x, start_y) = polar_to_cartesian(start_radius, start_coord.angle());
+        let start_angle = calc_display_angle(start_coord);
+        let (start_x, start_y) = polar_to_cartesian(start_radius, &start_angle);
         svg_content.push_str(&format!(
             r#"<circle cx="{:.2}" cy="{:.2}" r="3" fill="red"/>
 "#,
@@ -54,7 +55,8 @@ fn build_svg_content(
         ));
 
         let end_radius = calc_display_radius(end_coord.circle());
-        let (end_x, end_y) = polar_to_cartesian(end_radius, end_coord.angle());
+        let end_angle = calc_display_angle(end_coord);
+        let (end_x, end_y) = polar_to_cartesian(end_radius, &end_angle);
         svg_content.push_str(&format!(
             r#"<circle cx="{:.2}" cy="{:.2}" r="3" fill="blue"/>
 "#,
@@ -71,6 +73,17 @@ fn calc_display_radius(circle: usize) -> usize {
         0
     } else {
         circle * 10 + 5
+    }
+}
+
+fn calc_display_angle(coord: &CircleCoord) -> fraction::Fraction {
+    if coord.circle() == 0 {
+        coord.angle().clone()
+    } else {
+        let total_arcs = calc_total_arcs(coord.circle());
+        let angle_step = fraction::Fraction::from(360) / fraction::Fraction::from(total_arcs);
+        let half_step = angle_step / fraction::Fraction::from(2);
+        coord.angle() + half_step
     }
 }
 
