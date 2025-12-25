@@ -120,6 +120,8 @@ fn perform_random_walk<R: Rng>(
     let mut candidates: Vec<(usize, usize, Direction)> = vec![
         (start.0, start.1, Direction::Out),
         (start.0, start.1, Direction::Clockwise),
+        (start.0, start.1, Direction::In),
+        (start.0, start.1, Direction::CounterClockwise),
     ];
     let start_index = coord_to_index(start.0, start.1, outer);
     path[start_index] = true;
