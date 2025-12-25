@@ -125,6 +125,10 @@ impl Direction {
     fn is_arc_direction(&self) -> bool {
         matches!(self, Direction::Clockwise | Direction::CounterClockwise)
     }
+
+    fn uses_branch(&self) -> bool {
+        matches!(self, Direction::Out | Direction::Clockwise)
+    }
 }
 
 fn create_direction_candidates(circle: usize, arc_index: usize) -> Vec<(usize, usize, Direction)> {
@@ -172,10 +176,11 @@ fn perform_random_walk<R: Rng>(
 
         candidates.extend(create_direction_candidates(leaf.circle(), leaf.arc_index()));
 
+        let edge = if candidate.2.uses_branch() { branch } else { leaf };
         if candidate.2.is_arc_direction() {
-            arcs.push(branch);
+            arcs.push(edge);
         } else {
-            lines.push(if matches!(candidate.2, Direction::Out) { branch } else { leaf });
+            lines.push(edge);
         }
 
         if used[leaf_index] {
