@@ -6,32 +6,8 @@ use std::fs::File;
 use std::io::Write;
 
 pub fn render(maze: &Maze) -> std::io::Result<()> {
-    let circles = maze.circles();
-
-    let max_radius = circles * 10;
-    let view_size = max_radius * 2 + 20;
-
-    let mut svg_content = String::new();
-    svg_content.push_str(&format!(
-        r#"<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="{} {} {} {}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" shape-rendering="geometricPrecision">
-<g fill="none" stroke="black" stroke-width="1" stroke-linecap="round">
-"#,
-        -(view_size as i32) / 2,
-        -(view_size as i32) / 2,
-        view_size,
-        view_size
-    ));
-
-    svg_content.push_str(&render_arcs(maze));
-    svg_content.push_str(&render_lines(maze));
-
-    svg_content.push_str("</g>\n</svg>\n");
-
-    let mut file = File::create("maze.svg")?;
-    file.write_all(svg_content.as_bytes())?;
-
-    Ok(())
+    let svg_content = build_svg_content(maze, None, None);
+    write_svg_file(&svg_content)
 }
 
 pub fn render_with_path(
@@ -39,8 +15,16 @@ pub fn render_with_path(
     start: &CircleCoord,
     end: &CircleCoord,
 ) -> std::io::Result<()> {
-    let circles = maze.circles();
+    let svg_content = build_svg_content(maze, Some(start), Some(end));
+    write_svg_file(&svg_content)
+}
 
+fn build_svg_content(
+    maze: &Maze,
+    start: Option<&CircleCoord>,
+    end: Option<&CircleCoord>,
+) -> String {
+    let circles = maze.circles();
     let max_radius = circles * 10;
     let view_size = max_radius * 2 + 20;
 
@@ -58,30 +42,33 @@ pub fn render_with_path(
 
     svg_content.push_str(&render_arcs(maze));
     svg_content.push_str(&render_lines(maze));
-
     svg_content.push_str("</g>\n");
 
-    let start_radius = start.circle() * 10;
-    let (start_x, start_y) = polar_to_cartesian(start_radius, start.angle());
-    svg_content.push_str(&format!(
-        r#"<circle cx="{:.2}" cy="{:.2}" r="3" fill="red"/>
+    if let (Some(start_coord), Some(end_coord)) = (start, end) {
+        let start_radius = start_coord.circle() * 10;
+        let (start_x, start_y) = polar_to_cartesian(start_radius, start_coord.angle());
+        svg_content.push_str(&format!(
+            r#"<circle cx="{:.2}" cy="{:.2}" r="3" fill="red"/>
 "#,
-        start_x, start_y
-    ));
+            start_x, start_y
+        ));
 
-    let end_radius = end.circle() * 10;
-    let (end_x, end_y) = polar_to_cartesian(end_radius, end.angle());
-    svg_content.push_str(&format!(
-        r#"<circle cx="{:.2}" cy="{:.2}" r="3" fill="blue"/>
+        let end_radius = end_coord.circle() * 10;
+        let (end_x, end_y) = polar_to_cartesian(end_radius, end_coord.angle());
+        svg_content.push_str(&format!(
+            r#"<circle cx="{:.2}" cy="{:.2}" r="3" fill="blue"/>
 "#,
-        end_x, end_y
-    ));
+            end_x, end_y
+        ));
+    }
 
     svg_content.push_str("</svg>\n");
+    svg_content
+}
 
+fn write_svg_file(svg_content: &str) -> std::io::Result<()> {
     let mut file = File::create("maze.svg")?;
     file.write_all(svg_content.as_bytes())?;
-
     Ok(())
 }
 
