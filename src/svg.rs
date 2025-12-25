@@ -10,12 +10,10 @@ pub fn render(maze: &Maze) -> std::io::Result<()> {
     write_svg_file(&svg_content)
 }
 
-pub fn render_with_path(
-    maze: &Maze,
-    start: &CircleCoord,
-    end: &CircleCoord,
-) -> std::io::Result<()> {
-    let svg_content = build_svg_content(maze, Some(start), Some(end));
+pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> std::io::Result<()> {
+    let start = path.first();
+    let end = path.last();
+    let svg_content = build_svg_content(maze, start, end);
     write_svg_file(&svg_content)
 }
 
