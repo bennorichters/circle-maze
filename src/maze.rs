@@ -98,6 +98,7 @@ fn generate_shuffled_coordinates<R: Rng>(circles: usize, rng: &mut R) -> Vec<(us
     free
 }
 
+#[derive(Debug)]
 enum Direction {
     Out,
     In,
@@ -116,51 +117,65 @@ fn perform_random_walk<R: Rng>(
 ) {
     path.fill(false);
 
-    let mut coord = CircleCoord::create_with_arc_index(start.0, start.1);
-    let mut options: Vec<(usize, usize, Direction)> = vec![
-        (start.0, start.1, Direction::Clockwise),
-        (start.0, start.1, Direction::CounterClockwise),
+    let mut candidates: Vec<(usize, usize, Direction)> = vec![
         (start.0, start.1, Direction::Out),
+        (start.0, start.1, Direction::In),
     ];
-    let mut index = coord_to_index(start.0, start.1, outer);
+    let start_index = coord_to_index(start.0, start.1, outer);
+    path[start_index] = true;
+    used[start_index] = true;
 
     loop {
-        path[index] = true;
-        used[index] = true;
+        let candidate_index = rng.random_range(0..candidates.len());
+        let candidate = candidates.swap_remove(candidate_index);
 
-        let mut opt: (usize, usize, Direction);
-        let mut next: CircleCoord;
-        loop {
-            let opt_index = rng.random_range(0..options.len());
-            opt = options.swap_remove(opt_index);
-
-            next = match opt.2 {
-                Direction::Out => coord.next_out(),
-                Direction::In => coord.next_in(),
-                Direction::Clockwise => coord.next_clockwise(),
-                Direction::CounterClockwise => coord.next_counter_clockwise(),
-            };
-
-            index = coord_to_index(next.circle(), next.arc_index(), outer);
-
-            if !path[index] {
-                break;
+        let candidate_coord = CircleCoord::create_with_arc_index(candidate.0, candidate.1);
+        let edge_option = match candidate.2 {
+            Direction::Out => Some((candidate_coord.clone(), candidate_coord.next_out())),
+            Direction::In => {
+                if candidate_coord.circle() == 1 {
+                    None
+                } else {
+                    Some((candidate_coord.next_in(), candidate_coord.clone()))
+                }
             }
+            Direction::Clockwise => {
+                Some((candidate_coord.clone(), candidate_coord.next_clockwise()))
+            }
+            Direction::CounterClockwise => {
+                Some((candidate_coord.next_clockwise(), candidate_coord.clone()))
+            }
+        };
+
+        if edge_option.is_none() {
+            continue;
         }
 
-        match opt.2 {
-            Direction::Out | Direction::In => lines.push(coord),
-            Direction::Clockwise | Direction::CounterClockwise => arcs.push(coord),
+        let (branch, leaf) = edge_option.unwrap();
+
+        let leaf_index = coord_to_index(leaf.circle(), leaf.arc_index(), outer);
+        if path[leaf_index] {
+            continue;
         }
 
-        if used[index] {
+        candidates.push((leaf.circle(), leaf.arc_index(), Direction::Out));
+        candidates.push((leaf.circle(), leaf.arc_index(), Direction::In));
+        candidates.push((leaf.circle(), leaf.arc_index(), Direction::Clockwise));
+        candidates.push((leaf.circle(), leaf.arc_index(), Direction::CounterClockwise));
+
+        match candidate.2 {
+            Direction::Out => lines.push(branch),
+            Direction::In => lines.push(leaf),
+            Direction::Clockwise => arcs.push(branch),
+            Direction::CounterClockwise => arcs.push(leaf),
+        }
+
+        if used[leaf_index] {
             break;
         }
 
-        coord = next;
-        options.push((coord.circle(), coord.arc_index(), Direction::Clockwise));
-        options.push((coord.circle(), coord.arc_index(), Direction::CounterClockwise));
-        options.push((coord.circle(), coord.arc_index(), Direction::Out));
+        path[leaf_index] = true;
+        used[leaf_index] = true;
     }
 }
 
