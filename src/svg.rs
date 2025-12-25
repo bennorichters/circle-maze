@@ -45,7 +45,7 @@ fn build_svg_content(
     svg_content.push_str("</g>\n");
 
     if let (Some(start_coord), Some(end_coord)) = (start, end) {
-        let start_radius = start_coord.circle() * 10;
+        let start_radius = calc_display_radius(start_coord.circle());
         let (start_x, start_y) = polar_to_cartesian(start_radius, start_coord.angle());
         svg_content.push_str(&format!(
             r#"<circle cx="{:.2}" cy="{:.2}" r="3" fill="red"/>
@@ -53,7 +53,7 @@ fn build_svg_content(
             start_x, start_y
         ));
 
-        let end_radius = end_coord.circle() * 10;
+        let end_radius = calc_display_radius(end_coord.circle());
         let (end_x, end_y) = polar_to_cartesian(end_radius, end_coord.angle());
         svg_content.push_str(&format!(
             r#"<circle cx="{:.2}" cy="{:.2}" r="3" fill="blue"/>
@@ -64,6 +64,14 @@ fn build_svg_content(
 
     svg_content.push_str("</svg>\n");
     svg_content
+}
+
+fn calc_display_radius(circle: usize) -> usize {
+    if circle == 0 {
+        0
+    } else {
+        circle * 10 + 5
+    }
 }
 
 fn write_svg_file(svg_content: &str) -> std::io::Result<()> {
