@@ -36,11 +36,6 @@ fn main() {
         std::process::exit(1);
     };
 
-    // render(&maze).expect("Failed to render SVG");
-    let start = CircleCoord::create_with_arc_index(0, 0);
-    let p1 = CircleCoord::create_with_arc_index(1, 0);
-    let p2 = CircleCoord::create_with_arc_index(1, 1);
-    let end = CircleCoord::create_with_arc_index(2, 2);
-    let path = vec![start, p1, p2, end];
+    let path = maze.tree_diameter();
     render_with_path(&maze, &path).expect("Failed to render SVG");
 }
