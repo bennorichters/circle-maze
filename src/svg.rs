@@ -40,48 +40,47 @@ fn build_svg_content(maze: &Maze, path: Option<&[CircleCoord]>) -> String {
         svg_content.push_str(r#"<g fill="none" stroke="purple" stroke-width="2" stroke-linecap="round">
 "#);
 
-        for i in 0..path_coords.len().saturating_sub(1) {
-            let current = &path_coords[i];
-            let next = &path_coords[i + 1];
+        let (path_arcs, path_lines) = merge_path_segments(path_coords);
 
-            if current.circle() == next.circle() {
-                let radius = calc_display_radius(current.circle());
-                let start_angle = calc_display_angle(current);
-                let end_angle = calc_display_angle(next);
+        for (start, end) in path_arcs {
+            let radius = calc_display_radius(start.circle());
+            let start_angle = calc_display_angle(&start);
+            let end_angle = calc_display_angle(&end);
 
-                let start_degrees = fraction_to_degrees(&start_angle);
-                let end_degrees = fraction_to_degrees(&end_angle);
+            let start_degrees = fraction_to_degrees(&start_angle);
+            let end_degrees = fraction_to_degrees(&end_angle);
 
-                let mut angle_diff = end_degrees - start_degrees;
-                if angle_diff < 0.0 {
-                    angle_diff += 360.0;
-                }
-
-                let sweep_flag = if angle_diff <= 180.0 { 1 } else { 0 };
-
-                let (start_x, start_y) = polar_to_cartesian(radius, &start_angle);
-                let (end_x, end_y) = polar_to_cartesian(radius, &end_angle);
-
-                svg_content.push_str(&format!(
-                    r#"  <path d="M {:.2},{:.2} A {},{} 0 0 {} {:.2},{:.2}"/>
-"#,
-                    start_x, start_y, radius, radius, sweep_flag, end_x, end_y
-                ));
-            } else {
-                let current_radius = calc_display_radius(current.circle());
-                let current_angle = calc_display_angle(current);
-                let next_radius = calc_display_radius(next.circle());
-                let next_angle = calc_display_angle(next);
-
-                let (start_x, start_y) = polar_to_cartesian(current_radius, &current_angle);
-                let (end_x, end_y) = polar_to_cartesian(next_radius, &next_angle);
-
-                svg_content.push_str(&format!(
-                    r#"  <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>
-"#,
-                    start_x, start_y, end_x, end_y
-                ));
+            let mut angle_diff = end_degrees - start_degrees;
+            if angle_diff < 0.0 {
+                angle_diff += 360.0;
             }
+
+            let sweep_flag = if angle_diff <= 180.0 { 1 } else { 0 };
+
+            let (start_x, start_y) = polar_to_cartesian(radius, &start_angle);
+            let (end_x, end_y) = polar_to_cartesian(radius, &end_angle);
+
+            svg_content.push_str(&format!(
+                r#"  <path d="M {:.2},{:.2} A {},{} 0 0 {} {:.2},{:.2}"/>
+"#,
+                start_x, start_y, radius, radius, sweep_flag, end_x, end_y
+            ));
+        }
+
+        for (start, end) in path_lines {
+            let start_radius = calc_display_radius(start.circle());
+            let start_angle = calc_display_angle(&start);
+            let end_radius = calc_display_radius(end.circle());
+            let end_angle = calc_display_angle(&end);
+
+            let (start_x, start_y) = polar_to_cartesian(start_radius, &start_angle);
+            let (end_x, end_y) = polar_to_cartesian(end_radius, &end_angle);
+
+            svg_content.push_str(&format!(
+                r#"  <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>
+"#,
+                start_x, start_y, end_x, end_y
+            ));
         }
 
         svg_content.push_str("</g>\n");
@@ -188,6 +187,42 @@ fn render_lines(maze: &Maze) -> String {
     }
 
     content
+}
+
+fn merge_path_segments(
+    path: &[CircleCoord],
+) -> (Vec<(CircleCoord, CircleCoord)>, Vec<(CircleCoord, CircleCoord)>) {
+    let mut arcs = Vec::new();
+    let mut lines = Vec::new();
+
+    if path.len() < 2 {
+        return (arcs, lines);
+    }
+
+    let mut i = 0;
+    while i < path.len() - 1 {
+        let start = path[i].clone();
+        let mut j = i + 1;
+
+        if path[i].circle() == path[j].circle() {
+            while j < path.len() - 1 && path[j].circle() == path[j + 1].circle() {
+                j += 1;
+            }
+            arcs.push((start, path[j].clone()));
+        } else {
+            while j < path.len() - 1
+                && path[j].circle() != path[j + 1].circle()
+                && path[j].angle() == path[j + 1].angle()
+            {
+                j += 1;
+            }
+            lines.push((start, path[j].clone()));
+        }
+
+        i = j;
+    }
+
+    (arcs, lines)
 }
 
 fn fraction_to_degrees(angle: &fraction::Fraction) -> f64 {
