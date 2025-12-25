@@ -106,6 +106,36 @@ enum Direction {
     CounterClockwise,
 }
 
+impl Direction {
+    fn calculate_edge(&self, coord: &CircleCoord) -> Option<(CircleCoord, CircleCoord)> {
+        match self {
+            Direction::Out => Some((coord.clone(), coord.next_out())),
+            Direction::In => {
+                if coord.circle() == 1 {
+                    None
+                } else {
+                    Some((coord.next_in(), coord.clone()))
+                }
+            }
+            Direction::Clockwise => Some((coord.clone(), coord.next_clockwise())),
+            Direction::CounterClockwise => Some((coord.next_clockwise(), coord.clone())),
+        }
+    }
+
+    fn is_arc_direction(&self) -> bool {
+        matches!(self, Direction::Clockwise | Direction::CounterClockwise)
+    }
+}
+
+fn create_direction_candidates(circle: usize, arc_index: usize) -> Vec<(usize, usize, Direction)> {
+    vec![
+        (circle, arc_index, Direction::Out),
+        (circle, arc_index, Direction::Clockwise),
+        (circle, arc_index, Direction::In),
+        (circle, arc_index, Direction::CounterClockwise),
+    ]
+}
+
 fn perform_random_walk<R: Rng>(
     start: (usize, usize),
     outer: usize,
@@ -117,12 +147,7 @@ fn perform_random_walk<R: Rng>(
 ) {
     path.fill(false);
 
-    let mut candidates: Vec<(usize, usize, Direction)> = vec![
-        (start.0, start.1, Direction::Out),
-        (start.0, start.1, Direction::Clockwise),
-        (start.0, start.1, Direction::In),
-        (start.0, start.1, Direction::CounterClockwise),
-    ];
+    let mut candidates = create_direction_candidates(start.0, start.1);
     let start_index = coord_to_index(start.0, start.1, outer);
     path[start_index] = true;
     used[start_index] = true;
@@ -132,22 +157,7 @@ fn perform_random_walk<R: Rng>(
         let candidate = candidates.swap_remove(candidate_index);
 
         let candidate_coord = CircleCoord::create_with_arc_index(candidate.0, candidate.1);
-        let edge_option = match candidate.2 {
-            Direction::Out => Some((candidate_coord.clone(), candidate_coord.next_out())),
-            Direction::In => {
-                if candidate_coord.circle() == 1 {
-                    None
-                } else {
-                    Some((candidate_coord.next_in(), candidate_coord.clone()))
-                }
-            }
-            Direction::Clockwise => {
-                Some((candidate_coord.clone(), candidate_coord.next_clockwise()))
-            }
-            Direction::CounterClockwise => {
-                Some((candidate_coord.next_clockwise(), candidate_coord.clone()))
-            }
-        };
+        let edge_option = candidate.2.calculate_edge(&candidate_coord);
 
         if edge_option.is_none() {
             continue;
@@ -160,16 +170,12 @@ fn perform_random_walk<R: Rng>(
             continue;
         }
 
-        candidates.push((leaf.circle(), leaf.arc_index(), Direction::Out));
-        candidates.push((leaf.circle(), leaf.arc_index(), Direction::In));
-        candidates.push((leaf.circle(), leaf.arc_index(), Direction::Clockwise));
-        candidates.push((leaf.circle(), leaf.arc_index(), Direction::CounterClockwise));
+        candidates.extend(create_direction_candidates(leaf.circle(), leaf.arc_index()));
 
-        match candidate.2 {
-            Direction::Out => lines.push(branch),
-            Direction::In => lines.push(leaf),
-            Direction::Clockwise => arcs.push(branch),
-            Direction::CounterClockwise => arcs.push(leaf),
+        if candidate.2.is_arc_direction() {
+            arcs.push(branch);
+        } else {
+            lines.push(if matches!(candidate.2, Direction::Out) { branch } else { leaf });
         }
 
         if used[leaf_index] {
