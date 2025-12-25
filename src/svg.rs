@@ -87,21 +87,17 @@ fn build_svg_content(maze: &Maze, path: Option<&[CircleCoord]>) -> String {
         svg_content.push_str("</g>\n");
 
         for (index, coord) in path_coords.iter().enumerate() {
-            let radius = calc_display_radius(coord.circle());
-            let angle = calc_display_angle(coord);
-            let (x, y) = polar_to_cartesian(radius, &angle);
+            if index == 0 || index == path_coords.len() - 1 {
+                let radius = calc_display_radius(coord.circle());
+                let angle = calc_display_angle(coord);
+                let (x, y) = polar_to_cartesian(radius, &angle);
 
-            let color = if index == 0 || index == path_coords.len() - 1 {
-                "red"
-            } else {
-                "green"
-            };
-
-            svg_content.push_str(&format!(
-                r#"<circle cx="{:.2}" cy="{:.2}" r="3" fill="{}"/>
+                svg_content.push_str(&format!(
+                    r#"<circle cx="{:.2}" cy="{:.2}" r="3" fill="red"/>
 "#,
-                x, y, color
-            ));
+                    x, y
+                ));
+            }
         }
     }
 
