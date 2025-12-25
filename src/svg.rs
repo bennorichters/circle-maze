@@ -37,6 +37,55 @@ fn build_svg_content(maze: &Maze, path: Option<&[CircleCoord]>) -> String {
     svg_content.push_str("</g>\n");
 
     if let Some(path_coords) = path {
+        svg_content.push_str(r#"<g fill="none" stroke="purple" stroke-width="2">
+"#);
+
+        for i in 0..path_coords.len().saturating_sub(1) {
+            let current = &path_coords[i];
+            let next = &path_coords[i + 1];
+
+            if current.circle() == next.circle() {
+                let radius = calc_display_radius(current.circle());
+                let start_angle = calc_display_angle(current);
+                let end_angle = calc_display_angle(next);
+
+                let start_degrees = fraction_to_degrees(&start_angle);
+                let end_degrees = fraction_to_degrees(&end_angle);
+
+                let mut angle_diff = end_degrees - start_degrees;
+                if angle_diff < 0.0 {
+                    angle_diff += 360.0;
+                }
+
+                let large_arc_flag = if angle_diff > 180.0 { 1 } else { 0 };
+
+                let (start_x, start_y) = polar_to_cartesian(radius, &start_angle);
+                let (end_x, end_y) = polar_to_cartesian(radius, &end_angle);
+
+                svg_content.push_str(&format!(
+                    r#"  <path d="M {:.2},{:.2} A {},{} 0 {} 1 {:.2},{:.2}"/>
+"#,
+                    start_x, start_y, radius, radius, large_arc_flag, end_x, end_y
+                ));
+            } else {
+                let current_radius = calc_display_radius(current.circle());
+                let current_angle = calc_display_angle(current);
+                let next_radius = calc_display_radius(next.circle());
+                let next_angle = calc_display_angle(next);
+
+                let (start_x, start_y) = polar_to_cartesian(current_radius, &current_angle);
+                let (end_x, end_y) = polar_to_cartesian(next_radius, &next_angle);
+
+                svg_content.push_str(&format!(
+                    r#"  <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>
+"#,
+                    start_x, start_y, end_x, end_y
+                ));
+            }
+        }
+
+        svg_content.push_str("</g>\n");
+
         for (index, coord) in path_coords.iter().enumerate() {
             let radius = calc_display_radius(coord.circle());
             let angle = calc_display_angle(coord);
@@ -98,10 +147,8 @@ fn render_arcs(maze: &Maze) -> String {
             let start_angle = start.angle();
             let end_angle = end.angle();
 
-            let start_degrees =
-                (*start_angle.numer().unwrap() as f64) / (*start_angle.denom().unwrap() as f64);
-            let end_degrees =
-                (*end_angle.numer().unwrap() as f64) / (*end_angle.denom().unwrap() as f64);
+            let start_degrees = fraction_to_degrees(start_angle);
+            let end_degrees = fraction_to_degrees(end_angle);
 
             let mut angle_diff = end_degrees - start_degrees;
             if angle_diff < 0.0 {
@@ -147,8 +194,12 @@ fn render_lines(maze: &Maze) -> String {
     content
 }
 
+fn fraction_to_degrees(angle: &fraction::Fraction) -> f64 {
+    (*angle.numer().unwrap() as f64) / (*angle.denom().unwrap() as f64)
+}
+
 fn angle_to_radians(angle: &fraction::Fraction) -> f64 {
-    let degrees = (*angle.numer().unwrap() as f64) / (*angle.denom().unwrap() as f64);
+    let degrees = fraction_to_degrees(angle);
     degrees * PI / 180.0
 }
 
