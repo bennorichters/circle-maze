@@ -1,3 +1,4 @@
+use crate::circle_coord::CircleCoord;
 use crate::maze::Maze;
 use crate::merge::{merge_arcs, merge_lines};
 use std::f64::consts::PI;
@@ -26,6 +27,57 @@ pub fn render(maze: &Maze) -> std::io::Result<()> {
     svg_content.push_str(&render_lines(maze));
 
     svg_content.push_str("</g>\n</svg>\n");
+
+    let mut file = File::create("maze.svg")?;
+    file.write_all(svg_content.as_bytes())?;
+
+    Ok(())
+}
+
+pub fn render_with_path(
+    maze: &Maze,
+    start: &CircleCoord,
+    end: &CircleCoord,
+) -> std::io::Result<()> {
+    let circles = maze.circles();
+
+    let max_radius = circles * 10;
+    let view_size = max_radius * 2 + 20;
+
+    let mut svg_content = String::new();
+    svg_content.push_str(&format!(
+        r#"<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="{} {} {} {}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" shape-rendering="geometricPrecision">
+<g fill="none" stroke="black" stroke-width="1" stroke-linecap="round">
+"#,
+        -(view_size as i32) / 2,
+        -(view_size as i32) / 2,
+        view_size,
+        view_size
+    ));
+
+    svg_content.push_str(&render_arcs(maze));
+    svg_content.push_str(&render_lines(maze));
+
+    svg_content.push_str("</g>\n");
+
+    let start_radius = start.circle() * 10;
+    let (start_x, start_y) = polar_to_cartesian(start_radius, start.angle());
+    svg_content.push_str(&format!(
+        r#"<circle cx="{:.2}" cy="{:.2}" r="3" fill="red"/>
+"#,
+        start_x, start_y
+    ));
+
+    let end_radius = end.circle() * 10;
+    let (end_x, end_y) = polar_to_cartesian(end_radius, end.angle());
+    svg_content.push_str(&format!(
+        r#"<circle cx="{:.2}" cy="{:.2}" r="3" fill="blue"/>
+"#,
+        end_x, end_y
+    ));
+
+    svg_content.push_str("</svg>\n");
 
     let mut file = File::create("maze.svg")?;
     file.write_all(svg_content.as_bytes())?;
