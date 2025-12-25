@@ -37,7 +37,7 @@ fn build_svg_content(maze: &Maze, path: Option<&[CircleCoord]>) -> String {
     svg_content.push_str("</g>\n");
 
     if let Some(path_coords) = path {
-        svg_content.push_str(r#"<g fill="none" stroke="purple" stroke-width="2">
+        svg_content.push_str(r#"<g fill="none" stroke="purple" stroke-width="2" stroke-linecap="round">
 "#);
 
         for i in 0..path_coords.len().saturating_sub(1) {
