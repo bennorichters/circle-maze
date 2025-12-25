@@ -1,4 +1,4 @@
-use crate::circle_coord::{calc_total_arcs, CircleCoord};
+use crate::circle_coord::{CircleCoord, calc_total_arcs};
 use crate::maze::Maze;
 use crate::merge::{merge_arcs, merge_lines};
 use std::f64::consts::PI;
@@ -42,10 +42,8 @@ fn build_svg_content(maze: &Maze, path: Option<&[CircleCoord]>) -> String {
             let angle = calc_display_angle(coord);
             let (x, y) = polar_to_cartesian(radius, &angle);
 
-            let color = if index == 0 {
+            let color = if index == 0 || index == path_coords.len() - 1 {
                 "red"
-            } else if index == path_coords.len() - 1 {
-                "blue"
             } else {
                 "green"
             };
@@ -63,16 +61,12 @@ fn build_svg_content(maze: &Maze, path: Option<&[CircleCoord]>) -> String {
 }
 
 fn calc_display_radius(circle: usize) -> usize {
-    if circle == 0 {
-        0
-    } else {
-        circle * 10 + 5
-    }
+    if circle == 0 { 0 } else { circle * 10 + 5 }
 }
 
 fn calc_display_angle(coord: &CircleCoord) -> fraction::Fraction {
     if coord.circle() == 0 {
-        coord.angle().clone()
+        *coord.angle()
     } else {
         let total_arcs = calc_total_arcs(coord.circle());
         let angle_step = fraction::Fraction::from(360) / fraction::Fraction::from(total_arcs);
