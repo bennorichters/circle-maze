@@ -6,22 +6,16 @@ use std::fs::File;
 use std::io::Write;
 
 pub fn render(maze: &Maze) -> std::io::Result<()> {
-    let svg_content = build_svg_content(maze, None, None);
+    let svg_content = build_svg_content(maze, None);
     write_svg_file(&svg_content)
 }
 
 pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> std::io::Result<()> {
-    let start = path.first();
-    let end = path.last();
-    let svg_content = build_svg_content(maze, start, end);
+    let svg_content = build_svg_content(maze, Some(path));
     write_svg_file(&svg_content)
 }
 
-fn build_svg_content(
-    maze: &Maze,
-    start: Option<&CircleCoord>,
-    end: Option<&CircleCoord>,
-) -> String {
+fn build_svg_content(maze: &Maze, path: Option<&[CircleCoord]>) -> String {
     let circles = maze.circles();
     let max_radius = circles * 10;
     let view_size = max_radius * 2 + 20;
@@ -42,24 +36,26 @@ fn build_svg_content(
     svg_content.push_str(&render_lines(maze));
     svg_content.push_str("</g>\n");
 
-    if let (Some(start_coord), Some(end_coord)) = (start, end) {
-        let start_radius = calc_display_radius(start_coord.circle());
-        let start_angle = calc_display_angle(start_coord);
-        let (start_x, start_y) = polar_to_cartesian(start_radius, &start_angle);
-        svg_content.push_str(&format!(
-            r#"<circle cx="{:.2}" cy="{:.2}" r="3" fill="red"/>
-"#,
-            start_x, start_y
-        ));
+    if let Some(path_coords) = path {
+        for (index, coord) in path_coords.iter().enumerate() {
+            let radius = calc_display_radius(coord.circle());
+            let angle = calc_display_angle(coord);
+            let (x, y) = polar_to_cartesian(radius, &angle);
 
-        let end_radius = calc_display_radius(end_coord.circle());
-        let end_angle = calc_display_angle(end_coord);
-        let (end_x, end_y) = polar_to_cartesian(end_radius, &end_angle);
-        svg_content.push_str(&format!(
-            r#"<circle cx="{:.2}" cy="{:.2}" r="3" fill="blue"/>
+            let color = if index == 0 {
+                "red"
+            } else if index == path_coords.len() - 1 {
+                "blue"
+            } else {
+                "green"
+            };
+
+            svg_content.push_str(&format!(
+                r#"<circle cx="{:.2}" cy="{:.2}" r="3" fill="{}"/>
 "#,
-            end_x, end_y
-        ));
+                x, y, color
+            ));
+        }
     }
 
     svg_content.push_str("</svg>\n");
