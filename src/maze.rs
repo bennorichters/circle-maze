@@ -110,6 +110,37 @@ impl Maze {
 
         vec![]
     }
+
+    pub fn tree_diameter(&self) -> Vec<CircleCoord> {
+        let start = CircleCoord::create_with_arc_index(0, 0);
+        let first_end = self.find_farthest_node(&start);
+        let second_end = self.find_farthest_node(&first_end);
+        self.find_path(first_end, second_end)
+    }
+
+    fn find_farthest_node(&self, start: &CircleCoord) -> CircleCoord {
+        use std::collections::{VecDeque, HashSet};
+
+        let mut queue = VecDeque::new();
+        let mut visited = HashSet::new();
+        let mut farthest = start.clone();
+
+        queue.push_back(start.clone());
+        visited.insert(start.clone());
+
+        while let Some(current) = queue.pop_front() {
+            farthest = current.clone();
+
+            for neighbor in self.accessible_neighbours(&current) {
+                if !visited.contains(&neighbor) {
+                    visited.insert(neighbor.clone());
+                    queue.push_back(neighbor);
+                }
+            }
+        }
+
+        farthest
+    }
 }
 
 fn coord_to_index(circle: usize, arc_index: usize, outer: usize) -> usize {
