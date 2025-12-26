@@ -1,10 +1,12 @@
 use crate::{
     circle_coord::CircleCoord,
     json::parse_json_file,
-    maze::{MazeDeserializer, factory},
+    maze::{MazeDeserializer, MazeSerializer, factory},
     svg::{render, render_with_path},
 };
 use clap::Parser;
+use std::fs::File;
+use std::io::Write;
 
 mod circle_coord;
 mod json;
@@ -35,6 +37,12 @@ fn main() {
         eprintln!("Error: Either --parse or --create must be provided");
         std::process::exit(1);
     };
+
+    let serialized = MazeSerializer::serialize(&maze);
+    let json_string = serde_json::to_string_pretty(&serialized)
+        .expect("Failed to serialize maze to JSON string");
+    let mut file = File::create("maze.json").expect("Failed to create maze.json");
+    file.write_all(json_string.as_bytes()).expect("Failed to write to maze.json");
 
     let path = maze.tree_diameter();
     render_with_path(&maze, &path).expect("Failed to render SVG");
