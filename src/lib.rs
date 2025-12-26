@@ -11,8 +11,8 @@ use maze::{MazeDeserializer, MazeSerializer, factory};
 use svg::{render_with_path};
 
 fn create_rng() -> SmallRng {
-    let mut seed = [0u8; 16];
-    getrandom::getrandom(&mut seed).expect("Failed to get random seed");
+    let mut seed = [0u8; 32];
+    getrandom::fill(&mut seed).expect("Failed to get random seed");
     SmallRng::from_seed(seed)
 }
 

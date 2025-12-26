@@ -29,7 +29,7 @@ fn main() {
     let cli = Cli::parse();
 
     let maze = if let Some(circles) = cli.create {
-        let maze = factory(circles, &mut rand::thread_rng());
+        let maze = factory(circles, &mut rand::rng());
 
         let serialized = MazeSerializer::serialize(&maze);
         let json_string = serde_json::to_string_pretty(&serialized)

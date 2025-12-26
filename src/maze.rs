@@ -226,7 +226,7 @@ fn perform_random_walk<R: Rng>(
     used[start_index] = true;
 
     loop {
-        let candidate_index = rng.gen_range(0..candidates.len());
+        let candidate_index = rng.random_range(0..candidates.len());
         let candidate = candidates.swap_remove(candidate_index);
 
         let candidate_coord = CircleCoord::create_with_arc_index(candidate.0, candidate.1);
