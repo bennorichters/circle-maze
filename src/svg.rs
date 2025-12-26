@@ -42,7 +42,7 @@ fn build_svg_content(maze: &Maze, path: Option<&[CircleCoord]>) -> String {
 
         let (path_arcs, path_lines) = merge_path_segments(path_coords);
 
-        for (start, end) in path_arcs {
+        for (start, end, is_clockwise) in path_arcs {
             let radius = calc_display_radius(start.circle());
             let start_angle = calc_display_angle(&start);
             let end_angle = calc_display_angle(&end);
@@ -50,10 +50,21 @@ fn build_svg_content(maze: &Maze, path: Option<&[CircleCoord]>) -> String {
             let start_degrees = fraction_to_degrees(&start_angle);
             let end_degrees = fraction_to_degrees(&end_angle);
 
-            let mut angle_diff = end_degrees - start_degrees;
-            if angle_diff < 0.0 {
-                angle_diff += 360.0;
-            }
+            let sweep_flag = if is_clockwise { 1 } else { 0 };
+
+            let angle_diff = if is_clockwise {
+                if end_degrees >= start_degrees {
+                    end_degrees - start_degrees
+                } else {
+                    end_degrees + 360.0 - start_degrees
+                }
+            } else {
+                if start_degrees >= end_degrees {
+                    start_degrees - end_degrees
+                } else {
+                    start_degrees + 360.0 - end_degrees
+                }
+            };
 
             let large_arc_flag = if angle_diff > 180.0 { 1 } else { 0 };
 
@@ -61,9 +72,9 @@ fn build_svg_content(maze: &Maze, path: Option<&[CircleCoord]>) -> String {
             let (end_x, end_y) = polar_to_cartesian(radius, &end_angle);
 
             svg_content.push_str(&format!(
-                r#"  <path d="M {:.2},{:.2} A {},{} 0 {} 1 {:.2},{:.2}"/>
+                r#"  <path d="M {:.2},{:.2} A {},{} 0 {} {} {:.2},{:.2}"/>
 "#,
-                start_x, start_y, radius, radius, large_arc_flag, end_x, end_y
+                start_x, start_y, radius, radius, large_arc_flag, sweep_flag, end_x, end_y
             ));
         }
 
@@ -191,7 +202,7 @@ fn render_lines(maze: &Maze) -> String {
 
 fn merge_path_segments(
     path: &[CircleCoord],
-) -> (Vec<(CircleCoord, CircleCoord)>, Vec<(CircleCoord, CircleCoord)>) {
+) -> (Vec<(CircleCoord, CircleCoord, bool)>, Vec<(CircleCoord, CircleCoord)>) {
     let mut arcs = Vec::new();
     let mut lines = Vec::new();
 
@@ -208,7 +219,15 @@ fn merge_path_segments(
             while j < path.len() - 1 && path[j].circle() == path[j + 1].circle() {
                 j += 1;
             }
-            arcs.push((start, path[j].clone()));
+
+            let total_arcs = calc_total_arcs(start.circle());
+            let start_idx = start.arc_index();
+            let next_idx = path[i + 1].arc_index();
+
+            let forward_dist = (next_idx + total_arcs - start_idx) % total_arcs;
+            let is_clockwise = forward_dist > 0 && forward_dist <= total_arcs / 2;
+
+            arcs.push((start, path[j].clone(), is_clockwise));
         } else {
             while j < path.len() - 1
                 && path[j].circle() != path[j + 1].circle()
