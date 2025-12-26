@@ -310,24 +310,20 @@ pub struct MazeDeserializer;
 
 impl MazeDeserializer {
     pub fn deserialize(data: Value) -> Result<Maze, String> {
-        // Check that data is an object
         let obj = data.as_object().ok_or("Input must be a JSON object")?;
 
-        // Extract and validate 'circles' field
         let circles = obj
             .get("circles")
             .ok_or("Missing 'circles' field")?
             .as_u64()
             .ok_or("'circles' must be a number")? as usize;
 
-        // Extract and validate 'arcs' field
         let arcs_array = obj
             .get("arcs")
             .ok_or("Missing 'arcs' field")?
             .as_array()
             .ok_or("'arcs' must be an array")?;
 
-        // Parse arcs array
         let mut arcs = Vec::new();
         for (i, arc_obj) in arcs_array.iter().enumerate() {
             let arc_map = arc_obj
@@ -351,14 +347,12 @@ impl MazeDeserializer {
             arcs.push(coord);
         }
 
-        // Extract and validate 'lines' field
         let lines_array = obj
             .get("lines")
             .ok_or("Missing 'lines' field")?
             .as_array()
             .ok_or("'lines' must be an array")?;
 
-        // Parse lines array
         let mut lines = Vec::new();
         for (i, line_obj) in lines_array.iter().enumerate() {
             let line_map = line_obj
@@ -387,6 +381,42 @@ impl MazeDeserializer {
             circles,
             arcs,
             lines,
+        })
+    }
+}
+
+pub struct MazeSerializer;
+
+impl MazeSerializer {
+    pub fn serialize(maze: &Maze) -> Value {
+        use serde_json::json;
+
+        let arcs_array: Vec<Value> = maze
+            .arcs()
+            .iter()
+            .map(|coord| {
+                json!({
+                    "circle": coord.circle(),
+                    "arc": coord.arc_index()
+                })
+            })
+            .collect();
+
+        let lines_array: Vec<Value> = maze
+            .lines()
+            .iter()
+            .map(|coord| {
+                json!({
+                    "circle": coord.circle(),
+                    "arc": coord.arc_index()
+                })
+            })
+            .collect();
+
+        json!({
+            "circles": maze.circles(),
+            "arcs": arcs_array,
+            "lines": lines_array
         })
     }
 }
@@ -547,5 +577,43 @@ mod tests {
         assert!(neighbours.contains(&CircleCoord::create_with_arc_index(0, 0)));
         assert!(neighbours.contains(&CircleCoord::create_with_arc_index(2, 8)));
         assert!(neighbours.contains(&CircleCoord::create_with_arc_index(2, 9)));
+    }
+
+    #[test]
+    fn test_serialize_deserialize_roundtrip() {
+        let json_str = include_str!("../tests/fixtures/maze_3_circles.json");
+        let original_json: Value = serde_json::from_str(json_str).unwrap();
+        let maze = MazeDeserializer::deserialize(original_json.clone()).unwrap();
+        let serialized = MazeSerializer::serialize(&maze);
+        let deserialized_maze = MazeDeserializer::deserialize(serialized).unwrap();
+
+        assert_eq!(maze.circles(), deserialized_maze.circles());
+        assert_eq!(maze.arcs().len(), deserialized_maze.arcs().len());
+        assert_eq!(maze.lines().len(), deserialized_maze.lines().len());
+
+        for (original, deserialized) in maze.arcs().iter().zip(deserialized_maze.arcs().iter()) {
+            assert_eq!(original.circle(), deserialized.circle());
+            assert_eq!(original.arc_index(), deserialized.arc_index());
+        }
+
+        for (original, deserialized) in maze.lines().iter().zip(deserialized_maze.lines().iter()) {
+            assert_eq!(original.circle(), deserialized.circle());
+            assert_eq!(original.arc_index(), deserialized.arc_index());
+        }
+    }
+
+    #[test]
+    fn test_serialize_generated_maze() {
+        use rand::SeedableRng;
+        use rand::rngs::StdRng;
+
+        let mut rng = StdRng::seed_from_u64(42);
+        let maze = factory(4, &mut rng);
+        let serialized = MazeSerializer::serialize(&maze);
+        let deserialized = MazeDeserializer::deserialize(serialized).unwrap();
+
+        assert_eq!(maze.circles(), deserialized.circles());
+        assert_eq!(maze.arcs().len(), deserialized.arcs().len());
+        assert_eq!(maze.lines().len(), deserialized.lines().len());
     }
 }

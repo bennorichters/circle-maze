@@ -1,13 +1,13 @@
 use crate::{
     circle_coord::CircleCoord,
-    json_maze::parse_json_file,
+    json::parse_json_file,
     maze::{MazeDeserializer, factory},
     svg::{render, render_with_path},
 };
 use clap::Parser;
 
 mod circle_coord;
-mod json_maze;
+mod json;
 mod maze;
 mod merge;
 mod svg;
