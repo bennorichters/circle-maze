@@ -1,8 +1,7 @@
 use crate::{
-    circle_coord::CircleCoord,
     json::parse_json_file,
     maze::{MazeDeserializer, MazeSerializer, factory},
-    svg::{render_to_file, render_with_path_to_file},
+    svg::render_with_path_to_file,
 };
 use clap::Parser;
 use std::fs::File;
