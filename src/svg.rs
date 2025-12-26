@@ -55,15 +55,15 @@ fn build_svg_content(maze: &Maze, path: Option<&[CircleCoord]>) -> String {
                 angle_diff += 360.0;
             }
 
-            let sweep_flag = if angle_diff <= 180.0 { 1 } else { 0 };
+            let large_arc_flag = if angle_diff > 180.0 { 1 } else { 0 };
 
             let (start_x, start_y) = polar_to_cartesian(radius, &start_angle);
             let (end_x, end_y) = polar_to_cartesian(radius, &end_angle);
 
             svg_content.push_str(&format!(
-                r#"  <path d="M {:.2},{:.2} A {},{} 0 0 {} {:.2},{:.2}"/>
+                r#"  <path d="M {:.2},{:.2} A {},{} 0 {} 1 {:.2},{:.2}"/>
 "#,
-                start_x, start_y, radius, radius, sweep_flag, end_x, end_y
+                start_x, start_y, radius, radius, large_arc_flag, end_x, end_y
             ));
         }
 
