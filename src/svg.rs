@@ -42,7 +42,7 @@ fn build_svg_content(maze: &Maze, path: Option<&[CircleCoord]>) -> String {
 
         let (path_arcs, path_lines) = merge_path_segments(path_coords);
 
-        for (start, end) in path_arcs {
+        for (start, end, is_clockwise) in path_arcs {
             let radius = calc_display_radius(start.circle());
             let start_angle = calc_display_angle(&start);
             let end_angle = calc_display_angle(&end);
@@ -55,15 +55,16 @@ fn build_svg_content(maze: &Maze, path: Option<&[CircleCoord]>) -> String {
                 angle_diff += 360.0;
             }
 
+            let sweep_flag = if is_clockwise { 1 } else { 0 };
             let large_arc_flag = if angle_diff > 180.0 { 1 } else { 0 };
 
             let (start_x, start_y) = polar_to_cartesian(radius, &start_angle);
             let (end_x, end_y) = polar_to_cartesian(radius, &end_angle);
 
             svg_content.push_str(&format!(
-                r#"  <path d="M {:.2},{:.2} A {},{} 0 {} 1 {:.2},{:.2}"/>
+                r#"  <path d="M {:.2},{:.2} A {},{} 0 {} {} {:.2},{:.2}"/>
 "#,
-                start_x, start_y, radius, radius, large_arc_flag, end_x, end_y
+                start_x, start_y, radius, radius, large_arc_flag, sweep_flag, end_x, end_y
             ));
         }
 
@@ -191,7 +192,7 @@ fn render_lines(maze: &Maze) -> String {
 
 fn merge_path_segments(
     path: &[CircleCoord],
-) -> (Vec<(CircleCoord, CircleCoord)>, Vec<(CircleCoord, CircleCoord)>) {
+) -> (Vec<(CircleCoord, CircleCoord, bool)>, Vec<(CircleCoord, CircleCoord)>) {
     let mut arcs = Vec::new();
     let mut lines = Vec::new();
 
@@ -208,7 +209,15 @@ fn merge_path_segments(
             while j < path.len() - 1 && path[j].circle() == path[j + 1].circle() {
                 j += 1;
             }
-            arcs.push((start, path[j].clone()));
+
+            let total_arcs = calc_total_arcs(start.circle());
+            let start_idx = start.arc_index();
+            let next_idx = path[i + 1].arc_index();
+
+            let forward_dist = (next_idx + total_arcs - start_idx) % total_arcs;
+            let is_clockwise = forward_dist > 0 && forward_dist <= total_arcs / 2;
+
+            arcs.push((start, path[j].clone(), is_clockwise));
         } else {
             while j < path.len() - 1
                 && path[j].circle() != path[j + 1].circle()
