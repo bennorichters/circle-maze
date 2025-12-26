@@ -5,12 +5,20 @@ use std::f64::consts::PI;
 use std::fs::File;
 use std::io::Write;
 
-pub fn render(maze: &Maze) -> std::io::Result<()> {
+pub fn render(maze: &Maze) -> String {
+    build_svg_content(maze, None)
+}
+
+pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
+    build_svg_content(maze, Some(path))
+}
+
+pub fn render_to_file(maze: &Maze) -> std::io::Result<()> {
     let svg_content = build_svg_content(maze, None);
     write_svg_file(&svg_content)
 }
 
-pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> std::io::Result<()> {
+pub fn render_with_path_to_file(maze: &Maze, path: &[CircleCoord]) -> std::io::Result<()> {
     let svg_content = build_svg_content(maze, Some(path));
     write_svg_file(&svg_content)
 }

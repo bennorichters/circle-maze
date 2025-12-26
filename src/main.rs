@@ -2,7 +2,7 @@ use crate::{
     circle_coord::CircleCoord,
     json::parse_json_file,
     maze::{MazeDeserializer, MazeSerializer, factory},
-    svg::{render, render_with_path},
+    svg::{render_to_file, render_with_path_to_file},
 };
 use clap::Parser;
 use std::fs::File;
@@ -29,7 +29,7 @@ fn main() {
     let cli = Cli::parse();
 
     let maze = if let Some(circles) = cli.create {
-        let maze = factory(circles, &mut rand::rng());
+        let maze = factory(circles, &mut rand::thread_rng());
 
         let serialized = MazeSerializer::serialize(&maze);
         let json_string = serde_json::to_string_pretty(&serialized)
@@ -47,5 +47,5 @@ fn main() {
     };
 
     let path = maze.tree_diameter();
-    render_with_path(&maze, &path).expect("Failed to render SVG");
+    render_with_path_to_file(&maze, &path).expect("Failed to render SVG");
 }
