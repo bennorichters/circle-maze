@@ -2,7 +2,8 @@ FROM rust:1.83 as builder
 
 WORKDIR /build
 
-RUN cargo install wasm-pack
+RUN curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.13.1/wasm-pack-v0.13.1-x86_64-unknown-linux-musl.tar.gz \
+    | tar -xz -C /usr/local/bin --strip-components=1 wasm-pack-v0.13.1-x86_64-unknown-linux-musl/wasm-pack
 
 COPY Cargo.toml Cargo.lock build.rs ./
 COPY src ./src
