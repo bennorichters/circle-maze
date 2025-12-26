@@ -237,11 +237,13 @@ fn merge_path_segments(
 
             arcs.push((start, path[j].clone(), is_clockwise));
         } else {
-            while j < path.len() - 1
-                && path[j].circle() != path[j + 1].circle()
-                && path[j].angle() == path[j + 1].angle()
-            {
-                j += 1;
+            if start.angle() == path[j].angle() {
+                while j < path.len() - 1
+                    && path[j].circle() != path[j + 1].circle()
+                    && path[j].angle() == path[j + 1].angle()
+                {
+                    j += 1;
+                }
             }
             lines.push((start, path[j].clone()));
         }
