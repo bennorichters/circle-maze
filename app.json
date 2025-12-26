@@ -1,0 +1,13 @@
+{
+  "name": "circle-maze",
+  "description": "Circle Maze Generator - WebAssembly-powered web application",
+  "keywords": ["rust", "wasm", "webassembly", "maze", "generator"],
+  "website": "https://github.com/bennorichters/circle-maze",
+  "repository": "https://github.com/bennorichters/circle-maze",
+  "env": {
+    "PORT": {
+      "description": "Port for nginx to listen on",
+      "value": "5000"
+    }
+  }
+}

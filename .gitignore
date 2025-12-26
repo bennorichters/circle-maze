@@ -2,5 +2,5 @@
 web/pkg/
 
 *.svg
-*.json
+maze.json
 

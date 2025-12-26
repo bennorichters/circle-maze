@@ -1,0 +1,11 @@
+target/
+web/pkg/
+*.svg
+*.json
+.git/
+.gitignore
+notes/
+tests/
+README.md
+CLAUDE.md
+*.sh
