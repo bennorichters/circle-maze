@@ -1,0 +1,15 @@
+{
+  "name": "circle-maze",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "circle_maze_bg.wasm",
+    "circle_maze.js",
+    "circle_maze.d.ts"
+  ],
+  "main": "circle_maze.js",
+  "types": "circle_maze.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
