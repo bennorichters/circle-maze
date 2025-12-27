@@ -2,7 +2,6 @@ use wasm_bindgen::prelude::*;
 use rand::{SeedableRng, rngs::SmallRng};
 
 mod circle_coord;
-mod json;
 mod maze;
 mod merge;
 mod svg;
