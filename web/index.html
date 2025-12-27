@@ -44,6 +44,18 @@
             font-size: 14px;
         }
 
+        .subtitle a {
+            color: #519872;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .subtitle a:hover {
+            color: #3b5249;
+            text-decoration: underline;
+        }
+
         .controls {
             display: flex;
             gap: 15px;
@@ -149,7 +161,7 @@
 <body>
     <div class="container">
         <h1>Circle Maze Generator</h1>
-        <p class="subtitle">Generate beautiful circular mazes using WebAssembly</p>
+        <p class="subtitle">See <a href="https://github.com/bennorichters/circle-maze">Github</a> for more details.</p>
 
         <div id="error-container"></div>
 
