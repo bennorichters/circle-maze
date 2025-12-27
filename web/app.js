@@ -59,8 +59,8 @@ function togglePath() {
     if (path) {
         path.classList.toggle('visible');
         elements.togglePathBtn.textContent = path.classList.contains('visible')
-            ? 'Hide Path'
-            : 'Show Path';
+            ? 'Hide Solution'
+            : 'Show Solution';
     }
 }
 
