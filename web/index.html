@@ -156,6 +156,14 @@
         .secondary-btn {
             background: linear-gradient(135deg, #a4b494 0%, #519872 100%);
         }
+
+        #solution-path {
+            display: none;
+        }
+
+        #solution-path.visible {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -180,6 +188,7 @@
         </div>
 
         <div class="actions">
+            <button id="toggle-path-btn" style="display: none;">Show Path</button>
             <button id="download-svg-btn" style="display: none;">Download SVG</button>
             <button id="download-json-btn" class="secondary-btn" style="display: none;">
                 Download JSON

@@ -8,6 +8,7 @@ const elements = {
     circlesInput: document.getElementById('circles'),
     generateBtn: document.getElementById('generate-btn'),
     mazeDisplay: document.getElementById('maze-display'),
+    togglePathBtn: document.getElementById('toggle-path-btn'),
     downloadSvgBtn: document.getElementById('download-svg-btn'),
     downloadJsonBtn: document.getElementById('download-json-btn'),
     errorContainer: document.getElementById('error-container')
@@ -59,6 +60,7 @@ async function generateMaze() {
 
         elements.mazeDisplay.innerHTML = currentSvg;
 
+        elements.togglePathBtn.style.display = 'inline-block';
         elements.downloadSvgBtn.style.display = 'inline-block';
         elements.downloadJsonBtn.style.display = 'inline-block';
     } catch (error) {
@@ -84,6 +86,16 @@ function downloadJson() {
     }
 }
 
+function togglePath() {
+    const path = document.querySelector('#solution-path');
+    if (path) {
+        path.classList.toggle('visible');
+        elements.togglePathBtn.textContent = path.classList.contains('visible')
+            ? 'Hide Path'
+            : 'Show Path';
+    }
+}
+
 async function initApp() {
     try {
         elements.mazeDisplay.innerHTML = '<div class="loading">Loading WebAssembly module...</div>';
@@ -94,6 +106,7 @@ async function initApp() {
             '<div class="loading">Click "Generate Maze" to create a circular maze</div>';
 
         elements.generateBtn.addEventListener('click', generateMaze);
+        elements.togglePathBtn.addEventListener('click', togglePath);
         elements.downloadSvgBtn.addEventListener('click', downloadSvg);
         elements.downloadJsonBtn.addEventListener('click', downloadJson);
 

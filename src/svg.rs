@@ -27,8 +27,10 @@ pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
     svg_content.push_str(&render_lines(maze));
     svg_content.push_str("</g>\n");
 
-    svg_content.push_str(r#"<g fill="none" stroke="purple" stroke-width="2" stroke-linecap="round">
-"#);
+    svg_content.push_str(
+        r#"<g id="solution-path" fill="none" stroke="purple" stroke-width="2" stroke-linecap="round">
+"#,
+    );
 
     let (path_arcs, path_lines) = merge_path_segments(path);
 
