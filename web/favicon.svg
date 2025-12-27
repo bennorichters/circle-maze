@@ -1,30 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 -40 80 80" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" shape-rendering="geometricPrecision">
-<g fill="none" stroke="black" stroke-width="1" stroke-linecap="round">
-  <path d="M 5.00,-8.66 A 10,10 0 0 1 10.00,0.00"/>
-  <path d="M -20.00,0.00 A 20,20 0 0 1 -17.32,-10.00"/>
-  <path d="M 0.00,20.00 A 20,20 0 0 1 -17.32,10.00"/>
-  <path d="M -5.00,8.66 A 10,10 0 0 1 -10.00,0.00"/>
-  <path d="M 0.00,-20.00 A 20,20 0 0 1 10.00,-17.32"/>
-  <circle cx="0" cy="0" r="30"/>
-  <line x1="5.00" y1="8.66" x2="15.00" y2="25.98"/>
-  <line x1="10.00" y1="0.00" x2="30.00" y2="0.00"/>
-  <line x1="-5.00" y1="-8.66" x2="-15.00" y2="-25.98"/>
-  <line x1="-10.00" y1="0.00" x2="-30.00" y2="0.00"/>
-  <line x1="10.00" y1="-17.32" x2="15.00" y2="-25.98"/>
-  <line x1="17.32" y1="-10.00" x2="25.98" y2="-15.00"/>
-  <line x1="-10.00" y1="17.32" x2="-15.00" y2="25.98"/>
-  <line x1="17.32" y1="10.00" x2="25.98" y2="15.00"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -30 60 60" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" shape-rendering="geometricPrecision">
+<circle cx="0" cy="0" r="28" fill="#111"/>
+<g fill="none" stroke="white" stroke-width="4" stroke-linecap="round">
+  <path d="M 5.00,8.66 A 10,10 0 0 1 -5.00,-8.66"/>
+  <circle cx="0" cy="0" r="20"/>
+  <line x1="-5.00" y1="-8.66" x2="-10.00" y2="-17.32"/>
+  <line x1="5.00" y1="-8.66" x2="10.00" y2="-17.32"/>
+  <line x1="10.00" y1="0.00" x2="20.00" y2="0.00"/>
 </g>
-<g id="solution-path" fill="none" stroke="purple" stroke-width="2" stroke-linecap="round">
-  <path d="M -17.68,17.68 A 25,25 0 0 1 -24.15,6.47"/>
-  <path d="M -12.99,7.50 A 15,15 0 0 0 0.00,15.00"/>
-  <path d="M -6.47,-24.15 A 25,25 0 0 1 6.47,-24.15"/>
-  <line x1="-24.15" y1="6.47" x2="-12.99" y2="7.50"/>
-  <line x1="0.00" y1="15.00" x2="0.00" y2="0.00"/>
-  <line x1="0.00" y1="0.00" x2="0.00" y2="-15.00"/>
-  <line x1="0.00" y1="-15.00" x2="-6.47" y2="-24.15"/>
-</g>
-<circle cx="-17.68" cy="17.68" r="3" fill="red"/>
-<circle cx="6.47" cy="-24.15" r="3" fill="red"/>
 </svg>
+
