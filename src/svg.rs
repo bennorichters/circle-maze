@@ -7,10 +7,6 @@ type PathArcs = Vec<(CircleCoord, CircleCoord, bool)>;
 type PathLines = Vec<(CircleCoord, CircleCoord)>;
 
 pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
-    build_svg_content(maze, Some(path))
-}
-
-fn build_svg_content(maze: &Maze, path: Option<&[CircleCoord]>) -> String {
     let circles = maze.circles();
     let max_radius = circles * 10;
     let view_size = max_radius * 2 + 20;
@@ -31,76 +27,74 @@ fn build_svg_content(maze: &Maze, path: Option<&[CircleCoord]>) -> String {
     svg_content.push_str(&render_lines(maze));
     svg_content.push_str("</g>\n");
 
-    if let Some(path_coords) = path {
-        svg_content.push_str(r#"<g fill="none" stroke="purple" stroke-width="2" stroke-linecap="round">
+    svg_content.push_str(r#"<g fill="none" stroke="purple" stroke-width="2" stroke-linecap="round">
 "#);
 
-        let (path_arcs, path_lines) = merge_path_segments(path_coords);
+    let (path_arcs, path_lines) = merge_path_segments(path);
 
-        for (start, end, is_clockwise) in path_arcs {
-            let radius = calc_display_radius(start.circle());
-            let start_angle = calc_display_angle(&start);
-            let end_angle = calc_display_angle(&end);
+    for (start, end, is_clockwise) in path_arcs {
+        let radius = calc_display_radius(start.circle());
+        let start_angle = calc_display_angle(&start);
+        let end_angle = calc_display_angle(&end);
 
-            let start_degrees = fraction_to_degrees(&start_angle);
-            let end_degrees = fraction_to_degrees(&end_angle);
+        let start_degrees = fraction_to_degrees(&start_angle);
+        let end_degrees = fraction_to_degrees(&end_angle);
 
-            let sweep_flag = if is_clockwise { 1 } else { 0 };
+        let sweep_flag = if is_clockwise { 1 } else { 0 };
 
-            let angle_diff = if is_clockwise {
-                if end_degrees >= start_degrees {
-                    end_degrees - start_degrees
-                } else {
-                    end_degrees + 360.0 - start_degrees
-                }
-            } else if start_degrees >= end_degrees {
-                start_degrees - end_degrees
+        let angle_diff = if is_clockwise {
+            if end_degrees >= start_degrees {
+                end_degrees - start_degrees
             } else {
-                start_degrees + 360.0 - end_degrees
-            };
-
-            let large_arc_flag = if angle_diff > 180.0 { 1 } else { 0 };
-
-            let (start_x, start_y) = polar_to_cartesian(radius, &start_angle);
-            let (end_x, end_y) = polar_to_cartesian(radius, &end_angle);
-
-            svg_content.push_str(&format!(
-                r#"  <path d="M {:.2},{:.2} A {},{} 0 {} {} {:.2},{:.2}"/>
-"#,
-                start_x, start_y, radius, radius, large_arc_flag, sweep_flag, end_x, end_y
-            ));
-        }
-
-        for (start, end) in path_lines {
-            let start_radius = calc_display_radius(start.circle());
-            let start_angle = calc_display_angle(&start);
-            let end_radius = calc_display_radius(end.circle());
-            let end_angle = calc_display_angle(&end);
-
-            let (start_x, start_y) = polar_to_cartesian(start_radius, &start_angle);
-            let (end_x, end_y) = polar_to_cartesian(end_radius, &end_angle);
-
-            svg_content.push_str(&format!(
-                r#"  <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>
-"#,
-                start_x, start_y, end_x, end_y
-            ));
-        }
-
-        svg_content.push_str("</g>\n");
-
-        for (index, coord) in path_coords.iter().enumerate() {
-            if index == 0 || index == path_coords.len() - 1 {
-                let radius = calc_display_radius(coord.circle());
-                let angle = calc_display_angle(coord);
-                let (x, y) = polar_to_cartesian(radius, &angle);
-
-                svg_content.push_str(&format!(
-                    r#"<circle cx="{:.2}" cy="{:.2}" r="3" fill="red"/>
-"#,
-                    x, y
-                ));
+                end_degrees + 360.0 - start_degrees
             }
+        } else if start_degrees >= end_degrees {
+            start_degrees - end_degrees
+        } else {
+            start_degrees + 360.0 - end_degrees
+        };
+
+        let large_arc_flag = if angle_diff > 180.0 { 1 } else { 0 };
+
+        let (start_x, start_y) = polar_to_cartesian(radius, &start_angle);
+        let (end_x, end_y) = polar_to_cartesian(radius, &end_angle);
+
+        svg_content.push_str(&format!(
+            r#"  <path d="M {:.2},{:.2} A {},{} 0 {} {} {:.2},{:.2}"/>
+"#,
+            start_x, start_y, radius, radius, large_arc_flag, sweep_flag, end_x, end_y
+        ));
+    }
+
+    for (start, end) in path_lines {
+        let start_radius = calc_display_radius(start.circle());
+        let start_angle = calc_display_angle(&start);
+        let end_radius = calc_display_radius(end.circle());
+        let end_angle = calc_display_angle(&end);
+
+        let (start_x, start_y) = polar_to_cartesian(start_radius, &start_angle);
+        let (end_x, end_y) = polar_to_cartesian(end_radius, &end_angle);
+
+        svg_content.push_str(&format!(
+            r#"  <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>
+"#,
+            start_x, start_y, end_x, end_y
+        ));
+    }
+
+    svg_content.push_str("</g>\n");
+
+    for (index, coord) in path.iter().enumerate() {
+        if index == 0 || index == path.len() - 1 {
+            let radius = calc_display_radius(coord.circle());
+            let angle = calc_display_angle(coord);
+            let (x, y) = polar_to_cartesian(radius, &angle);
+
+            svg_content.push_str(&format!(
+                r#"<circle cx="{:.2}" cy="{:.2}" r="3" fill="red"/>
+"#,
+                x, y
+            ));
         }
     }
 
