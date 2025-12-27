@@ -1,7 +1,8 @@
 use crate::{
     json::parse_json_file,
     maze::{MazeDeserializer, MazeSerializer, factory},
-    svg::render_with_path_to_file,
+    svg::render_with_path,
+    circle_coord::CircleCoord,
 };
 use clap::Parser;
 use std::fs::File;
@@ -12,6 +13,16 @@ mod json;
 mod maze;
 mod merge;
 mod svg;
+
+fn render_with_path_to_file(
+    maze: &crate::maze::Maze,
+    path: &[CircleCoord]
+) -> std::io::Result<()> {
+    let svg_content = render_with_path(maze, path);
+    let mut file = File::create("maze.svg")?;
+    file.write_all(svg_content.as_bytes())?;
+    Ok(())
+}
 
 #[derive(Parser)]
 #[command(name = "circle-maze")]

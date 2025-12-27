@@ -2,25 +2,9 @@ use crate::circle_coord::{CircleCoord, calc_total_arcs};
 use crate::maze::Maze;
 use crate::merge::{merge_arcs, merge_lines};
 use std::f64::consts::PI;
-use std::fs::File;
-use std::io::Write;
-
-pub fn render(maze: &Maze) -> String {
-    build_svg_content(maze, None)
-}
 
 pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
     build_svg_content(maze, Some(path))
-}
-
-pub fn render_to_file(maze: &Maze) -> std::io::Result<()> {
-    let svg_content = build_svg_content(maze, None);
-    write_svg_file(&svg_content)
-}
-
-pub fn render_with_path_to_file(maze: &Maze, path: &[CircleCoord]) -> std::io::Result<()> {
-    let svg_content = build_svg_content(maze, Some(path));
-    write_svg_file(&svg_content)
 }
 
 fn build_svg_content(maze: &Maze, path: Option<&[CircleCoord]>) -> String {
@@ -136,12 +120,6 @@ fn calc_display_angle(coord: &CircleCoord) -> fraction::Fraction {
         let half_step = angle_step / fraction::Fraction::from(2);
         coord.angle() + half_step
     }
-}
-
-fn write_svg_file(svg_content: &str) -> std::io::Result<()> {
-    let mut file = File::create("maze.svg")?;
-    file.write_all(svg_content.as_bytes())?;
-    Ok(())
 }
 
 fn render_arcs(maze: &Maze) -> String {
