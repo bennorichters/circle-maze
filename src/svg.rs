@@ -3,13 +3,19 @@ use crate::maze::Maze;
 use crate::merge::{merge_arcs, merge_lines};
 use std::f64::consts::PI;
 
+const DEGREES_IN_CIRCLE: f64 = 360.0;
+const DEGREES_IN_SEMICIRCLE: f64 = 180.0;
+const SVG_VIEWBOX_PADDING: usize = 20;
+const CIRCLE_RADIUS_STEP: usize = 10;
+const HALF_RADIUS_STEP: usize = 5;
+
 type PathArcs = Vec<(CircleCoord, CircleCoord, bool)>;
 type PathLines = Vec<(CircleCoord, CircleCoord)>;
 
 pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
     let circles = maze.circles();
-    let max_radius = circles * 10;
-    let view_size = max_radius * 2 + 20;
+    let max_radius = circles * CIRCLE_RADIUS_STEP;
+    let view_size = max_radius * 2 + SVG_VIEWBOX_PADDING;
 
     let mut svg_content = String::new();
     svg_content.push_str(&format!(
@@ -48,15 +54,15 @@ pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
             if end_degrees >= start_degrees {
                 end_degrees - start_degrees
             } else {
-                end_degrees + 360.0 - start_degrees
+                end_degrees + DEGREES_IN_CIRCLE - start_degrees
             }
         } else if start_degrees >= end_degrees {
             start_degrees - end_degrees
         } else {
-            start_degrees + 360.0 - end_degrees
+            start_degrees + DEGREES_IN_CIRCLE - end_degrees
         };
 
-        let large_arc_flag = if angle_diff > 180.0 { 1 } else { 0 };
+        let large_arc_flag = if angle_diff > DEGREES_IN_SEMICIRCLE { 1 } else { 0 };
 
         let (start_x, start_y) = polar_to_cartesian(radius, &start_angle);
         let (end_x, end_y) = polar_to_cartesian(radius, &end_angle);
@@ -105,7 +111,7 @@ pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
 }
 
 fn calc_display_radius(circle: usize) -> usize {
-    if circle == 0 { 0 } else { circle * 10 + 5 }
+    if circle == 0 { 0 } else { circle * CIRCLE_RADIUS_STEP + HALF_RADIUS_STEP }
 }
 
 fn calc_display_angle(coord: &CircleCoord) -> fraction::Fraction {
@@ -113,7 +119,8 @@ fn calc_display_angle(coord: &CircleCoord) -> fraction::Fraction {
         *coord.angle()
     } else {
         let total_arcs = calc_total_arcs(coord.circle());
-        let angle_step = fraction::Fraction::from(360) / fraction::Fraction::from(total_arcs);
+        let angle_step = fraction::Fraction::from(DEGREES_IN_CIRCLE as u64) /
+            fraction::Fraction::from(total_arcs);
         let half_step = angle_step / fraction::Fraction::from(2);
         coord.angle() + half_step
     }
@@ -124,7 +131,7 @@ fn render_arcs(maze: &Maze) -> String {
     let merged_arcs = merge_arcs(maze);
 
     for (start, end) in merged_arcs {
-        let radius = start.circle() * 10;
+        let radius = start.circle() * CIRCLE_RADIUS_STEP;
 
         if start == end {
             content.push_str(&format!(
@@ -141,10 +148,10 @@ fn render_arcs(maze: &Maze) -> String {
 
             let mut angle_diff = end_degrees - start_degrees;
             if angle_diff < 0.0 {
-                angle_diff += 360.0;
+                angle_diff += DEGREES_IN_CIRCLE;
             }
 
-            let large_arc_flag = if angle_diff > 180.0 { 1 } else { 0 };
+            let large_arc_flag = if angle_diff > DEGREES_IN_SEMICIRCLE { 1 } else { 0 };
 
             let (start_x, start_y) = polar_to_cartesian(radius, start_angle);
             let (end_x, end_y) = polar_to_cartesian(radius, end_angle);
@@ -166,9 +173,9 @@ fn render_lines(maze: &Maze) -> String {
 
     for (start, end) in merged_lines {
         let start_angle = start.angle();
-        let start_radius = start.circle() * 10;
+        let start_radius = start.circle() * CIRCLE_RADIUS_STEP;
         let end_angle = end.angle();
-        let end_radius = end.circle() * 10;
+        let end_radius = end.circle() * CIRCLE_RADIUS_STEP;
 
         let (start_x, start_y) = polar_to_cartesian(start_radius, start_angle);
         let (end_x, end_y) = polar_to_cartesian(end_radius, end_angle);
@@ -233,7 +240,7 @@ fn fraction_to_degrees(angle: &fraction::Fraction) -> f64 {
 
 fn angle_to_radians(angle: &fraction::Fraction) -> f64 {
     let degrees = fraction_to_degrees(angle);
-    degrees * PI / 180.0
+    degrees * PI / DEGREES_IN_SEMICIRCLE
 }
 
 fn polar_to_cartesian(radius: usize, angle: &fraction::Fraction) -> (f64, f64) {
