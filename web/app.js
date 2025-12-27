@@ -8,6 +8,7 @@ const elements = {
     generateBtn: document.getElementById('generate-btn'),
     mazeDisplay: document.getElementById('maze-display'),
     togglePathBtn: document.getElementById('toggle-path-btn'),
+    instructionText: document.getElementById('instruction-text'),
     errorContainer: document.getElementById('error-container')
 };
 
@@ -45,6 +46,7 @@ async function generateMaze() {
         elements.mazeDisplay.innerHTML = currentSvg;
 
         elements.togglePathBtn.style.display = 'inline-block';
+        elements.instructionText.style.display = 'block';
     } catch (error) {
         showError(`Error generating maze: ${error.message}`);
         elements.mazeDisplay.innerHTML =
