@@ -1,4 +1,4 @@
-use crate::circle_coord::{CircleCoord, calc_total_arcs};
+use crate::circle_coord::{calc_total_arcs, CircleCoord};
 use crate::maze::Maze;
 use crate::merge::{merge_arcs, merge_lines};
 use std::f64::consts::PI;
@@ -80,7 +80,11 @@ fn render_solution_arcs(arcs: &PathArcs) -> String {
             start_degrees + DEGREES_IN_CIRCLE - end_degrees
         };
 
-        let large_arc_flag = if angle_diff > DEGREES_IN_SEMICIRCLE { 1 } else { 0 };
+        let large_arc_flag = if angle_diff > DEGREES_IN_SEMICIRCLE {
+            1
+        } else {
+            0
+        };
 
         let (start_x, start_y) = polar_to_cartesian(radius, &start_angle);
         let (end_x, end_y) = polar_to_cartesian(radius, &end_angle);
@@ -138,7 +142,11 @@ fn render_path_markers(path: &[CircleCoord]) -> String {
 }
 
 fn calc_display_radius(circle: usize) -> usize {
-    if circle == 0 { 0 } else { circle * CIRCLE_RADIUS_STEP + HALF_RADIUS_STEP }
+    if circle == 0 {
+        0
+    } else {
+        circle * CIRCLE_RADIUS_STEP + HALF_RADIUS_STEP
+    }
 }
 
 fn calc_display_angle(coord: &CircleCoord) -> fraction::Fraction {
@@ -146,8 +154,8 @@ fn calc_display_angle(coord: &CircleCoord) -> fraction::Fraction {
         *coord.angle()
     } else {
         let total_arcs = calc_total_arcs(coord.circle());
-        let angle_step = fraction::Fraction::from(DEGREES_IN_CIRCLE as u64) /
-            fraction::Fraction::from(total_arcs);
+        let angle_step = fraction::Fraction::from(DEGREES_IN_CIRCLE as u64)
+            / fraction::Fraction::from(total_arcs);
         let half_step = angle_step / fraction::Fraction::from(2);
         coord.angle() + half_step
     }
@@ -178,7 +186,11 @@ fn render_arcs(maze: &Maze) -> String {
                 angle_diff += DEGREES_IN_CIRCLE;
             }
 
-            let large_arc_flag = if angle_diff > DEGREES_IN_SEMICIRCLE { 1 } else { 0 };
+            let large_arc_flag = if angle_diff > DEGREES_IN_SEMICIRCLE {
+                1
+            } else {
+                0
+            };
 
             let (start_x, start_y) = polar_to_cartesian(radius, start_angle);
             let (end_x, end_y) = polar_to_cartesian(radius, end_angle);
