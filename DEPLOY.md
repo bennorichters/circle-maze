@@ -29,7 +29,12 @@ dokku config:set circle-maze PORT=5000
 ### 3. Set Up Domain (Optional)
 
 ```bash
-dokku domains:set circle-maze yourdomain.com
+dokku domains:set circle-maze circle-maze.yourdomain.com
+```
+
+Configure DNS by adding an A record:
+```
+circle-maze.yourdomain.com  →  A  →  your.vps.ip.address
 ```
 
 ### 4. Add Git Remote
@@ -105,10 +110,10 @@ dokku logs circle-maze --tail
 ### Test the Application
 
 ```bash
-curl -I http://your-domain.com
+curl -I http://circle-maze.yourdomain.com
 ```
 
-Or visit http://your-domain.com in your browser.
+Or visit http://circle-maze.yourdomain.com in your browser.
 
 ## Local Docker Testing
 
