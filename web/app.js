@@ -46,6 +46,7 @@ async function generateMaze() {
         elements.mazeDisplay.innerHTML = currentSvg;
 
         elements.togglePathBtn.style.display = 'inline-block';
+        elements.togglePathBtn.textContent = 'Show Solution';
         elements.instructionText.style.display = 'block';
     } catch (error) {
         showError(`Error generating maze: ${error.message}`);
