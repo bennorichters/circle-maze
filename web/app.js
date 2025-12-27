@@ -1,15 +1,14 @@
-import init, { generate_maze_svg, generate_maze_json } from './pkg/circle_maze.js';
+import init, { generate_maze_svg } from './pkg/circle_maze.js';
 
 let wasmModule = null;
 let currentSvg = null;
-let currentJson = null;
 
 const elements = {
     circlesInput: document.getElementById('circles'),
     generateBtn: document.getElementById('generate-btn'),
     mazeDisplay: document.getElementById('maze-display'),
-    downloadSvgBtn: document.getElementById('download-svg-btn'),
-    downloadJsonBtn: document.getElementById('download-json-btn'),
+    togglePathBtn: document.getElementById('toggle-path-btn'),
+    instructionText: document.getElementById('instruction-text'),
     errorContainer: document.getElementById('error-container')
 };
 
@@ -22,18 +21,6 @@ function showError(message) {
 
 function clearError() {
     elements.errorContainer.innerHTML = '';
-}
-
-function downloadFile(content, filename, mimeType) {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
 }
 
 async function generateMaze() {
@@ -55,12 +42,11 @@ async function generateMaze() {
 
     try {
         currentSvg = generate_maze_svg(circles);
-        currentJson = generate_maze_json(circles);
 
         elements.mazeDisplay.innerHTML = currentSvg;
 
-        elements.downloadSvgBtn.style.display = 'inline-block';
-        elements.downloadJsonBtn.style.display = 'inline-block';
+        elements.togglePathBtn.style.display = 'inline-block';
+        elements.instructionText.style.display = 'block';
     } catch (error) {
         showError(`Error generating maze: ${error.message}`);
         elements.mazeDisplay.innerHTML =
@@ -70,17 +56,13 @@ async function generateMaze() {
     }
 }
 
-function downloadSvg() {
-    if (currentSvg) {
-        const circles = elements.circlesInput.value;
-        downloadFile(currentSvg, `circle-maze-${circles}.svg`, 'image/svg+xml');
-    }
-}
-
-function downloadJson() {
-    if (currentJson) {
-        const circles = elements.circlesInput.value;
-        downloadFile(currentJson, `circle-maze-${circles}.json`, 'application/json');
+function togglePath() {
+    const path = document.querySelector('#solution-path');
+    if (path) {
+        path.classList.toggle('visible');
+        elements.togglePathBtn.textContent = path.classList.contains('visible')
+            ? 'Hide Solution'
+            : 'Show Solution';
     }
 }
 
@@ -94,8 +76,7 @@ async function initApp() {
             '<div class="loading">Click "Generate Maze" to create a circular maze</div>';
 
         elements.generateBtn.addEventListener('click', generateMaze);
-        elements.downloadSvgBtn.addEventListener('click', downloadSvg);
-        elements.downloadJsonBtn.addEventListener('click', downloadJson);
+        elements.togglePathBtn.addEventListener('click', togglePath);
 
         elements.circlesInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
