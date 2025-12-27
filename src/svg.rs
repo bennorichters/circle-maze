@@ -319,6 +319,16 @@ fn merge_path_segments(path: &[CircleCoord]) -> Vec<PathSegment> {
                         ));
                     }
                 }
+            } else {
+                let ea = calc_display_angle(&start.clone());
+                let is_clockwise =
+                    clockwise(fraction_to_degrees(&ea), fraction_to_degrees(&start_angle));
+                to_push = Some(PathSegment::Arc(
+                    start_radius,
+                    ea,
+                    start_angle,
+                    is_clockwise,
+                ));
             }
 
             if let Some(tp) = to_push {
@@ -336,6 +346,15 @@ fn merge_path_segments(path: &[CircleCoord]) -> Vec<PathSegment> {
         i = j;
     }
 
+    if let PathSegment::Line(_sr, _er, _sa, ea) = segments.last().unwrap() {
+        let finish_radius = calc_display_radius(path[path.len() - 1].circle());
+        let finsh_angle = calc_display_angle(&path[path.len() - 1]);
+        let is_clockwise = clockwise(fraction_to_degrees(ea), fraction_to_degrees(&finsh_angle));
+
+        let to_push = PathSegment::Arc(finish_radius, *ea, finsh_angle, is_clockwise);
+        segments.push(to_push);
+    }
+
     segments
 }
 
@@ -345,8 +364,7 @@ fn clockwise(start_angle_deg: f64, next_angle_deg: f64) -> bool {
         angle_diff += DEGREES_IN_CIRCLE;
     }
 
-    let is_clockwise = angle_diff > 0.0 && angle_diff <= DEGREES_IN_SEMICIRCLE;
-    is_clockwise
+    angle_diff > 0.0 && angle_diff <= DEGREES_IN_SEMICIRCLE
 }
 
 fn fraction_to_degrees(angle: &fraction::Fraction) -> f64 {
