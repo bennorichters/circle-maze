@@ -1,0 +1,3 @@
+Change the function `merge_path_segments` such that if a line segment has a different `start_angle` as its `end_angle` has the, line is changed such that:
+- `start_angle` takes the value of `end_angle` if 'start_radius < end_radius`
+- `end_angle` takes the value of `start_angle` if 'start_radius > end_radius`
