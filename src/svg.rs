@@ -18,7 +18,18 @@ pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
     let view_size = max_radius * 2 + SVG_VIEWBOX_PADDING;
 
     let mut svg_content = String::new();
-    svg_content.push_str(&format!(
+    svg_content.push_str(&render_svg_header(view_size));
+    svg_content.push_str(&render_arcs(maze));
+    svg_content.push_str(&render_lines(maze));
+    svg_content.push_str("</g>\n");
+    svg_content.push_str(&render_solution_path(path));
+    svg_content.push_str(&render_path_markers(path));
+    svg_content.push_str("</svg>\n");
+    svg_content
+}
+
+fn render_svg_header(view_size: usize) -> String {
+    format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="{} {} {} {}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" shape-rendering="geometricPrecision">
 <g fill="none" stroke="black" stroke-width="1" stroke-linecap="round">
@@ -27,30 +38,37 @@ pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
         -(view_size as i32) / 2,
         view_size,
         view_size
-    ));
+    )
+}
 
-    svg_content.push_str(&render_arcs(maze));
-    svg_content.push_str(&render_lines(maze));
-    svg_content.push_str("</g>\n");
-
-    svg_content.push_str(
+fn render_solution_path(path: &[CircleCoord]) -> String {
+    let mut content = String::new();
+    content.push_str(
         r#"<g id="solution-path" fill="none" stroke="purple" stroke-width="2" stroke-linecap="round">
 "#,
     );
 
     let (path_arcs, path_lines) = merge_path_segments(path);
+    content.push_str(&render_solution_arcs(&path_arcs));
+    content.push_str(&render_solution_lines(&path_lines));
+    content.push_str("</g>\n");
+    content
+}
 
-    for (start, end, is_clockwise) in path_arcs {
+fn render_solution_arcs(arcs: &PathArcs) -> String {
+    let mut content = String::new();
+
+    for (start, end, is_clockwise) in arcs {
         let radius = calc_display_radius(start.circle());
-        let start_angle = calc_display_angle(&start);
-        let end_angle = calc_display_angle(&end);
+        let start_angle = calc_display_angle(start);
+        let end_angle = calc_display_angle(end);
 
         let start_degrees = fraction_to_degrees(&start_angle);
         let end_degrees = fraction_to_degrees(&end_angle);
 
-        let sweep_flag = if is_clockwise { 1 } else { 0 };
+        let sweep_flag = if *is_clockwise { 1 } else { 0 };
 
-        let angle_diff = if is_clockwise {
+        let angle_diff = if *is_clockwise {
             if end_degrees >= start_degrees {
                 end_degrees - start_degrees
             } else {
@@ -67,30 +85,40 @@ pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
         let (start_x, start_y) = polar_to_cartesian(radius, &start_angle);
         let (end_x, end_y) = polar_to_cartesian(radius, &end_angle);
 
-        svg_content.push_str(&format!(
+        content.push_str(&format!(
             r#"  <path d="M {:.2},{:.2} A {},{} 0 {} {} {:.2},{:.2}"/>
 "#,
             start_x, start_y, radius, radius, large_arc_flag, sweep_flag, end_x, end_y
         ));
     }
 
-    for (start, end) in path_lines {
+    content
+}
+
+fn render_solution_lines(lines: &PathLines) -> String {
+    let mut content = String::new();
+
+    for (start, end) in lines {
         let start_radius = calc_display_radius(start.circle());
-        let start_angle = calc_display_angle(&start);
+        let start_angle = calc_display_angle(start);
         let end_radius = calc_display_radius(end.circle());
-        let end_angle = calc_display_angle(&end);
+        let end_angle = calc_display_angle(end);
 
         let (start_x, start_y) = polar_to_cartesian(start_radius, &start_angle);
         let (end_x, end_y) = polar_to_cartesian(end_radius, &end_angle);
 
-        svg_content.push_str(&format!(
+        content.push_str(&format!(
             r#"  <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>
 "#,
             start_x, start_y, end_x, end_y
         ));
     }
 
-    svg_content.push_str("</g>\n");
+    content
+}
+
+fn render_path_markers(path: &[CircleCoord]) -> String {
+    let mut content = String::new();
 
     for (index, coord) in path.iter().enumerate() {
         if index == 0 || index == path.len() - 1 {
@@ -98,7 +126,7 @@ pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
             let angle = calc_display_angle(coord);
             let (x, y) = polar_to_cartesian(radius, &angle);
 
-            svg_content.push_str(&format!(
+            content.push_str(&format!(
                 r#"<circle cx="{:.2}" cy="{:.2}" r="3" fill="red"/>
 "#,
                 x, y
@@ -106,8 +134,7 @@ pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
         }
     }
 
-    svg_content.push_str("</svg>\n");
-    svg_content
+    content
 }
 
 fn calc_display_radius(circle: usize) -> usize {
