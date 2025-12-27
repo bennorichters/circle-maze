@@ -53,12 +53,10 @@ fn build_svg_content(maze: &Maze, path: Option<&[CircleCoord]>) -> String {
                 } else {
                     end_degrees + 360.0 - start_degrees
                 }
+            } else if start_degrees >= end_degrees {
+                start_degrees - end_degrees
             } else {
-                if start_degrees >= end_degrees {
-                    start_degrees - end_degrees
-                } else {
-                    start_degrees + 360.0 - end_degrees
-                }
+                start_degrees + 360.0 - end_degrees
             };
 
             let large_arc_flag = if angle_diff > 180.0 { 1 } else { 0 };
