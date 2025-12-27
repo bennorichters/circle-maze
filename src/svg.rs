@@ -10,8 +10,8 @@ const CIRCLE_RADIUS_STEP: usize = 10;
 const HALF_RADIUS_STEP: usize = 5;
 
 enum PathSegment {
-    Arc(CircleCoord, CircleCoord, bool),
-    Line(CircleCoord, CircleCoord),
+    Arc(usize, fraction::Fraction, fraction::Fraction, bool),
+    Line(usize, usize, fraction::Fraction, fraction::Fraction),
 }
 
 pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
@@ -53,11 +53,21 @@ fn render_solution_path(path: &[CircleCoord]) -> String {
     let segments = merge_path_segments(path);
     for segment in segments {
         match segment {
-            PathSegment::Arc(start, end, is_clockwise) => {
-                content.push_str(&render_solution_arc(&start, &end, is_clockwise));
+            PathSegment::Arc(radius, start_angle, end_angle, is_clockwise) => {
+                content.push_str(&render_solution_arc(
+                    radius,
+                    &start_angle,
+                    &end_angle,
+                    is_clockwise,
+                ));
             }
-            PathSegment::Line(start, end) => {
-                content.push_str(&render_solution_line(&start, &end));
+            PathSegment::Line(start_radius, end_radius, start_angle, end_angle) => {
+                content.push_str(&render_solution_line(
+                    start_radius,
+                    end_radius,
+                    &start_angle,
+                    &end_angle,
+                ));
             }
         }
     }
@@ -65,13 +75,14 @@ fn render_solution_path(path: &[CircleCoord]) -> String {
     content
 }
 
-fn render_solution_arc(start: &CircleCoord, end: &CircleCoord, is_clockwise: bool) -> String {
-    let radius = calc_display_radius(start.circle());
-    let start_angle = calc_display_angle(start);
-    let end_angle = calc_display_angle(end);
-
-    let start_degrees = fraction_to_degrees(&start_angle);
-    let end_degrees = fraction_to_degrees(&end_angle);
+fn render_solution_arc(
+    radius: usize,
+    start_angle: &fraction::Fraction,
+    end_angle: &fraction::Fraction,
+    is_clockwise: bool,
+) -> String {
+    let start_degrees = fraction_to_degrees(start_angle);
+    let end_degrees = fraction_to_degrees(end_angle);
 
     let sweep_flag = if is_clockwise { 1 } else { 0 };
 
@@ -93,8 +104,8 @@ fn render_solution_arc(start: &CircleCoord, end: &CircleCoord, is_clockwise: boo
         0
     };
 
-    let (start_x, start_y) = polar_to_cartesian(radius, &start_angle);
-    let (end_x, end_y) = polar_to_cartesian(radius, &end_angle);
+    let (start_x, start_y) = polar_to_cartesian(radius, start_angle);
+    let (end_x, end_y) = polar_to_cartesian(radius, end_angle);
 
     format!(
         r#"  <path d="M {:.2},{:.2} A {},{} 0 {} {} {:.2},{:.2}"/>
@@ -103,14 +114,14 @@ fn render_solution_arc(start: &CircleCoord, end: &CircleCoord, is_clockwise: boo
     )
 }
 
-fn render_solution_line(start: &CircleCoord, end: &CircleCoord) -> String {
-    let start_radius = calc_display_radius(start.circle());
-    let start_angle = calc_display_angle(start);
-    let end_radius = calc_display_radius(end.circle());
-    let end_angle = calc_display_angle(end);
-
-    let (start_x, start_y) = polar_to_cartesian(start_radius, &start_angle);
-    let (end_x, end_y) = polar_to_cartesian(end_radius, &end_angle);
+fn render_solution_line(
+    start_radius: usize,
+    end_radius: usize,
+    start_angle: &fraction::Fraction,
+    end_angle: &fraction::Fraction,
+) -> String {
+    let (start_x, start_y) = polar_to_cartesian(start_radius, start_angle);
+    let (end_x, end_y) = polar_to_cartesian(end_radius, end_angle);
 
     format!(
         r#"  <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>
@@ -244,17 +255,21 @@ fn merge_path_segments(path: &[CircleCoord]) -> Vec<PathSegment> {
                 j += 1;
             }
 
-            let start_angle = fraction_to_degrees(start.angle());
-            let next_angle = fraction_to_degrees(path[i + 1].angle());
+            let start_angle_deg = fraction_to_degrees(start.angle());
+            let next_angle_deg = fraction_to_degrees(path[i + 1].angle());
 
-            let mut angle_diff = next_angle - start_angle;
+            let mut angle_diff = next_angle_deg - start_angle_deg;
             if angle_diff < 0.0 {
                 angle_diff += DEGREES_IN_CIRCLE;
             }
 
             let is_clockwise = angle_diff > 0.0 && angle_diff <= DEGREES_IN_SEMICIRCLE;
 
-            segments.push(PathSegment::Arc(start, path[j].clone(), is_clockwise));
+            let radius = calc_display_radius(start.circle());
+            let start_angle = calc_display_angle(&start);
+            let end_angle = calc_display_angle(&path[j]);
+
+            segments.push(PathSegment::Arc(radius, start_angle, end_angle, is_clockwise));
         } else {
             if start.angle() == path[j].angle() {
                 while j < path.len() - 1
@@ -264,7 +279,18 @@ fn merge_path_segments(path: &[CircleCoord]) -> Vec<PathSegment> {
                     j += 1;
                 }
             }
-            segments.push(PathSegment::Line(start, path[j].clone()));
+
+            let start_radius = calc_display_radius(start.circle());
+            let end_radius = calc_display_radius(path[j].circle());
+            let start_angle = calc_display_angle(&start);
+            let end_angle = calc_display_angle(&path[j]);
+
+            segments.push(PathSegment::Line(
+                start_radius,
+                end_radius,
+                start_angle,
+                end_angle,
+            ));
         }
 
         i = j;
