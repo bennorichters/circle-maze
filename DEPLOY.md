@@ -89,7 +89,7 @@ dokku letsencrypt:cron-job --add
 ### Configure Proxy Ports
 
 ```bash
-dokku proxy:ports-set circle-maze http:80:5000 https:443:5000
+dokku ports:set circle-maze http:80:5000 https:443:5000
 ```
 
 ## Testing the Deployment
