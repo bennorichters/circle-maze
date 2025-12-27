@@ -3,6 +3,9 @@ use crate::maze::Maze;
 use crate::merge::{merge_arcs, merge_lines};
 use std::f64::consts::PI;
 
+type PathArcs = Vec<(CircleCoord, CircleCoord, bool)>;
+type PathLines = Vec<(CircleCoord, CircleCoord)>;
+
 pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
     build_svg_content(maze, Some(path))
 }
@@ -186,9 +189,7 @@ fn render_lines(maze: &Maze) -> String {
     content
 }
 
-fn merge_path_segments(
-    path: &[CircleCoord],
-) -> (Vec<(CircleCoord, CircleCoord, bool)>, Vec<(CircleCoord, CircleCoord)>) {
+fn merge_path_segments(path: &[CircleCoord]) -> (PathArcs, PathLines) {
     let mut arcs = Vec::new();
     let mut lines = Vec::new();
 
