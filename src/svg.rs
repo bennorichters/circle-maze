@@ -247,12 +247,15 @@ fn merge_path_segments(path: &[CircleCoord]) -> (PathArcs, PathLines) {
                 j += 1;
             }
 
-            let total_arcs = calc_total_arcs(start.circle());
-            let start_idx = start.arc_index();
-            let next_idx = path[i + 1].arc_index();
+            let start_angle = fraction_to_degrees(start.angle());
+            let next_angle = fraction_to_degrees(path[i + 1].angle());
 
-            let forward_dist = (next_idx + total_arcs - start_idx) % total_arcs;
-            let is_clockwise = forward_dist > 0 && forward_dist <= total_arcs / 2;
+            let mut angle_diff = next_angle - start_angle;
+            if angle_diff < 0.0 {
+                angle_diff += DEGREES_IN_CIRCLE;
+            }
+
+            let is_clockwise = angle_diff > 0.0 && angle_diff <= DEGREES_IN_SEMICIRCLE;
 
             arcs.push((start, path[j].clone(), is_clockwise));
         } else {
