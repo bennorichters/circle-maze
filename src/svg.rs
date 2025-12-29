@@ -64,7 +64,7 @@ fn render_svg_header(view_size: usize) -> String {
     format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="{} {} {} {}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" shape-rendering="geometricPrecision">
-<g fill="none" stroke="black" stroke-width="1" stroke-linecap="round">
+<g id="borders" fill="none" stroke="black" stroke-width="1" stroke-linecap="round">
 "#,
         -(view_size as i32) / 2,
         -(view_size as i32) / 2,
