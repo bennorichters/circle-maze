@@ -139,6 +139,8 @@ fn render_solution_line(
 
 fn render_path_markers(path: &[CircleCoord]) -> String {
     let mut content = String::new();
+    content.push_str(r#"<g id="start-finish-markers" fill="red">
+"#);
 
     for (index, coord) in path.iter().enumerate() {
         if index != 0 && index != path.len() - 1 {
@@ -150,12 +152,13 @@ fn render_path_markers(path: &[CircleCoord]) -> String {
         let point = polar_to_cartesian(radius, &angle);
 
         content.push_str(&format!(
-            r#"<circle cx="{:.2}" cy="{:.2}" r="{}" fill="red"/>
+            r#"<circle cx="{:.2}" cy="{:.2}" r="{}"/>
 "#,
             point.x, point.y, MARKER_RADIUS
         ));
     }
 
+    content.push_str("</g>\n");
     content
 }
 
