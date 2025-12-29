@@ -152,7 +152,7 @@ fn render_path_markers(path: &[CircleCoord]) -> String {
         let point = polar_to_cartesian(radius, &angle);
 
         content.push_str(&format!(
-            r#"<circle cx="{:.2}" cy="{:.2}" r="{}"/>
+            r#"  <circle cx="{:.2}" cy="{:.2}" r="{}"/>
 "#,
             point.x, point.y, MARKER_RADIUS
         ));
