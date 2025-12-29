@@ -471,3 +471,53 @@ fn polar_to_cartesian(radius: usize, angle: &fraction::Fraction) -> Point {
         y: if y.abs() < COORDINATE_EPSILON { 0.0 } else { y },
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_render_with_path_has_three_g_elements_with_correct_ids() {
+        use crate::maze::MazeDeserializer;
+
+        let maze = MazeDeserializer::deserialize(
+            serde_json::json!({
+                "circles": 2,
+                "arcs": [],
+                "lines": []
+            })
+        ).unwrap();
+
+        let path = vec![
+            CircleCoord::create_with_arc_index(0, 0),
+            CircleCoord::create_with_arc_index(1, 0),
+        ];
+
+        let svg_string = render_with_path(&maze, &path);
+
+        let doc = roxmltree::Document::parse(&svg_string).unwrap();
+
+        let g_elements: Vec<_> = doc
+            .descendants()
+            .filter(|n| n.tag_name().name() == "g")
+            .collect();
+
+        assert_eq!(g_elements.len(), 3, "Expected exactly 3 g elements");
+
+        let ids: Vec<_> = g_elements
+            .iter()
+            .filter_map(|n| n.attribute("id"))
+            .collect();
+
+        assert_eq!(ids.len(), 3, "All g elements should have an id attribute");
+        assert!(ids.contains(&"borders"), "Expected g element with id='borders'");
+        assert!(
+            ids.contains(&"solution-path"),
+            "Expected g element with id='solution-path'"
+        );
+        assert!(
+            ids.contains(&"start-finish-markers"),
+            "Expected g element with id='start-finish-markers'"
+        );
+    }
+}
