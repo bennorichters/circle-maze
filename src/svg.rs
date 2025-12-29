@@ -64,7 +64,7 @@ fn render_svg_header(view_size: usize) -> String {
     format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="{} {} {} {}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" shape-rendering="geometricPrecision">
-<g fill="none" stroke="black" stroke-width="1" stroke-linecap="round">
+<g id="borders" fill="none" stroke="black" stroke-width="1" stroke-linecap="round">
 "#,
         -(view_size as i32) / 2,
         -(view_size as i32) / 2,
@@ -139,6 +139,8 @@ fn render_solution_line(
 
 fn render_path_markers(path: &[CircleCoord]) -> String {
     let mut content = String::new();
+    content.push_str(r#"<g id="start-finish-markers" fill="red">
+"#);
 
     for (index, coord) in path.iter().enumerate() {
         if index != 0 && index != path.len() - 1 {
@@ -150,12 +152,13 @@ fn render_path_markers(path: &[CircleCoord]) -> String {
         let point = polar_to_cartesian(radius, &angle);
 
         content.push_str(&format!(
-            r#"<circle cx="{:.2}" cy="{:.2}" r="{}" fill="red"/>
+            r#"  <circle cx="{:.2}" cy="{:.2}" r="{}"/>
 "#,
             point.x, point.y, MARKER_RADIUS
         ));
     }
 
+    content.push_str("</g>\n");
     content
 }
 
@@ -466,5 +469,93 @@ fn polar_to_cartesian(radius: usize, angle: &fraction::Fraction) -> Point {
     Point {
         x: if x.abs() < COORDINATE_EPSILON { 0.0 } else { x },
         y: if y.abs() < COORDINATE_EPSILON { 0.0 } else { y },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_render_with_path_has_three_g_elements_with_correct_ids() {
+        use crate::maze::MazeDeserializer;
+        use std::fs;
+
+        let fixtures_dir = "tests/fixtures";
+        let entries = fs::read_dir(fixtures_dir)
+            .unwrap_or_else(|_| panic!("Failed to read directory: {}", fixtures_dir));
+
+        let json_files: Vec<_> = entries
+            .filter_map(|entry| entry.ok())
+            .filter(|entry| {
+                entry.path().extension().and_then(|s| s.to_str()) == Some("json")
+            })
+            .collect();
+
+        assert!(!json_files.is_empty(), "No JSON files found in {}", fixtures_dir);
+
+        for entry in json_files {
+            let file_path = entry.path();
+            let file_name = file_path.file_name().unwrap().to_str().unwrap();
+
+            let json_content = fs::read_to_string(&file_path)
+                .unwrap_or_else(|_| panic!("Failed to read file: {:?}", file_path));
+
+            let json_data: serde_json::Value = serde_json::from_str(&json_content)
+                .unwrap_or_else(|_| panic!("Failed to parse JSON from: {}", file_name));
+
+            let maze = MazeDeserializer::deserialize(json_data)
+                .unwrap_or_else(|_| panic!("Failed to deserialize maze from: {}", file_name));
+
+            let path = vec![
+                CircleCoord::create_with_arc_index(0, 0),
+                CircleCoord::create_with_arc_index(1, 0),
+            ];
+
+            let svg_string = render_with_path(&maze, &path);
+
+            let doc = roxmltree::Document::parse(&svg_string).unwrap_or_else(|_| {
+                panic!("Failed to parse SVG XML for file: {}", file_name)
+            });
+
+            let g_elements: Vec<_> = doc
+                .descendants()
+                .filter(|n| n.tag_name().name() == "g")
+                .collect();
+
+            assert_eq!(
+                g_elements.len(),
+                3,
+                "Expected exactly 3 g elements for file: {}",
+                file_name
+            );
+
+            let ids: Vec<_> = g_elements
+                .iter()
+                .filter_map(|n| n.attribute("id"))
+                .collect();
+
+            assert_eq!(
+                ids.len(),
+                3,
+                "All g elements should have an id attribute for file: {}",
+                file_name
+            );
+            assert!(
+                ids.contains(&"borders"),
+                "Expected g element with id='borders' for file: {}",
+                file_name
+            );
+            assert!(
+                ids.contains(&"solution-path"),
+                "Expected g element with id='solution-path' for file: {}",
+                file_name
+            );
+            assert!(
+                ids.contains(&"start-finish-markers"),
+                "Expected g element with id='start-finish-markers' for file: {}",
+                file_name
+            );
+        }
     }
 }
