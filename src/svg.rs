@@ -558,4 +558,87 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn test_borders_do_not_intersect_solution_path() {
+        use crate::maze::MazeDeserializer;
+        use std::fs;
+
+        let fixtures_dir = "tests/fixtures";
+        let entries = fs::read_dir(fixtures_dir)
+            .unwrap_or_else(|_| panic!("Failed to read directory: {}", fixtures_dir));
+
+        let json_files: Vec<_> = entries
+            .filter_map(|entry| entry.ok())
+            .filter(|entry| {
+                entry.path().extension().and_then(|s| s.to_str()) == Some("json")
+            })
+            .collect();
+
+        assert!(!json_files.is_empty(), "No JSON files found in {}", fixtures_dir);
+
+        for entry in json_files {
+            let file_path = entry.path();
+            let file_name = file_path.file_name().unwrap().to_str().unwrap();
+
+            let json_content = fs::read_to_string(&file_path)
+                .unwrap_or_else(|_| panic!("Failed to read file: {:?}", file_path));
+
+            let json_data: serde_json::Value = serde_json::from_str(&json_content)
+                .unwrap_or_else(|_| panic!("Failed to parse JSON from: {}", file_name));
+
+            let maze = MazeDeserializer::deserialize(json_data)
+                .unwrap_or_else(|_| panic!("Failed to deserialize maze from: {}", file_name));
+
+            let path = vec![
+                CircleCoord::create_with_arc_index(0, 0),
+                CircleCoord::create_with_arc_index(1, 0),
+            ];
+
+            let svg_string = render_with_path(&maze, &path);
+
+            let doc = roxmltree::Document::parse(&svg_string).unwrap_or_else(|_| {
+                panic!("Failed to parse SVG XML for file: {}", file_name)
+            });
+
+            let borders_g = doc
+                .descendants()
+                .find(|n| {
+                    n.tag_name().name() == "g" && n.attribute("id") == Some("borders")
+                })
+                .unwrap_or_else(|| {
+                    panic!("Failed to find g element with id='borders' for file: {}", file_name)
+                });
+
+            let circle_elements: Vec<_> = borders_g
+                .children()
+                .filter(|n| n.tag_name().name() == "circle")
+                .collect();
+
+            assert_eq!(
+                circle_elements.len(),
+                1,
+                "Expected exactly 1 circle element in borders g for file: {}",
+                file_name
+            );
+
+            let circle = circle_elements[0];
+            let radius_str = circle
+                .attribute("r")
+                .unwrap_or_else(|| {
+                    panic!("Circle element missing r attribute for file: {}", file_name)
+                });
+
+            let radius: usize = radius_str.parse().unwrap_or_else(|_| {
+                panic!("Failed to parse radius value '{}' for file: {}", radius_str, file_name)
+            });
+
+            let expected_radius = maze.circles() * CIRCLE_RADIUS_STEP;
+            assert_eq!(
+                radius, expected_radius,
+                "Circle radius should be {} for file: {}",
+                expected_radius, file_name
+            );
+        }
+    }
 }
