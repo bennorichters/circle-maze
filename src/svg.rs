@@ -641,4 +641,151 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn test_all_svg_elements_within_largest_circle() {
+        use crate::maze::MazeDeserializer;
+        use std::fs;
+
+        let fixtures_dir = "tests/fixtures";
+        let entries = fs::read_dir(fixtures_dir)
+            .unwrap_or_else(|_| panic!("Failed to read directory: {}", fixtures_dir));
+
+        let json_files: Vec<_> = entries
+            .filter_map(|entry| entry.ok())
+            .filter(|entry| {
+                entry.path().extension().and_then(|s| s.to_str()) == Some("json")
+            })
+            .collect();
+
+        assert!(!json_files.is_empty(), "No JSON files found in {}", fixtures_dir);
+
+        for entry in json_files {
+            let file_path = entry.path();
+            let file_name = file_path.file_name().unwrap().to_str().unwrap();
+
+            let json_content = fs::read_to_string(&file_path)
+                .unwrap_or_else(|_| panic!("Failed to read file: {:?}", file_path));
+
+            let json_data: serde_json::Value = serde_json::from_str(&json_content)
+                .unwrap_or_else(|_| panic!("Failed to parse JSON from: {}", file_name));
+
+            let maze = MazeDeserializer::deserialize(json_data)
+                .unwrap_or_else(|_| panic!("Failed to deserialize maze from: {}", file_name));
+
+            let path = vec![
+                CircleCoord::create_with_arc_index(0, 0),
+                CircleCoord::create_with_arc_index(1, 0),
+            ];
+
+            let svg_string = render_with_path(&maze, &path);
+
+            let doc = roxmltree::Document::parse(&svg_string).unwrap_or_else(|_| {
+                panic!("Failed to parse SVG XML for file: {}", file_name)
+            });
+
+            let max_radius = (maze.circles() * CIRCLE_RADIUS_STEP + HALF_RADIUS_STEP) as f64;
+
+            for node in doc.descendants() {
+                match node.tag_name().name() {
+                    "circle" => {
+                        let cx: f64 = node
+                            .attribute("cx")
+                            .and_then(|v| v.parse().ok())
+                            .unwrap_or(0.0);
+                        let cy: f64 = node
+                            .attribute("cy")
+                            .and_then(|v| v.parse().ok())
+                            .unwrap_or(0.0);
+                        let r: f64 = node
+                            .attribute("r")
+                            .and_then(|v| v.parse().ok())
+                            .unwrap_or(0.0);
+
+                        let distance_from_origin = (cx * cx + cy * cy).sqrt();
+                        let max_extent = distance_from_origin + r;
+
+                        assert!(
+                            max_extent <= max_radius + 1e-6,
+                            "Circle at ({}, {}) with radius {} exceeds max radius {} in {}",
+                            cx, cy, r, max_radius, file_name
+                        );
+                    }
+                    "line" => {
+                        let x1: f64 = node
+                            .attribute("x1")
+                            .and_then(|v| v.parse().ok())
+                            .unwrap_or(0.0);
+                        let y1: f64 = node
+                            .attribute("y1")
+                            .and_then(|v| v.parse().ok())
+                            .unwrap_or(0.0);
+                        let x2: f64 = node
+                            .attribute("x2")
+                            .and_then(|v| v.parse().ok())
+                            .unwrap_or(0.0);
+                        let y2: f64 = node
+                            .attribute("y2")
+                            .and_then(|v| v.parse().ok())
+                            .unwrap_or(0.0);
+
+                        let dist1 = (x1 * x1 + y1 * y1).sqrt();
+                        let dist2 = (x2 * x2 + y2 * y2).sqrt();
+
+                        assert!(
+                            dist1 <= max_radius + 1e-6,
+                            "Line start ({}, {}) at distance {} exceeds max radius {} in {}",
+                            x1, y1, dist1, max_radius, file_name
+                        );
+                        assert!(
+                            dist2 <= max_radius + 1e-6,
+                            "Line end ({}, {}) at distance {} exceeds max radius {} in {}",
+                            x2, y2, dist2, max_radius, file_name
+                        );
+                    }
+                    "path" => {
+                        let d = node.attribute("d").unwrap_or("");
+
+                        let parts: Vec<&str> = d.split_whitespace().collect();
+                        let mut i = 0;
+
+                        while i < parts.len() {
+                            if parts[i] == "M" && i + 1 < parts.len() {
+                                let coords: Vec<f64> = parts[i + 1]
+                                    .split(',')
+                                    .filter_map(|s| s.parse().ok())
+                                    .collect();
+                                if coords.len() == 2 {
+                                    let dist = (coords[0] * coords[0] + coords[1] * coords[1]).sqrt();
+                                    assert!(
+                                        dist <= max_radius + 1e-6,
+                                        "Path M point ({}, {}) at distance {} exceeds max radius {} in {}",
+                                        coords[0], coords[1], dist, max_radius, file_name
+                                    );
+                                }
+                                i += 2;
+                            } else if parts[i] == "A" && i + 6 < parts.len() {
+                                let coords: Vec<f64> = parts[i + 6]
+                                    .split(',')
+                                    .filter_map(|s| s.parse().ok())
+                                    .collect();
+                                if coords.len() == 2 {
+                                    let dist = (coords[0] * coords[0] + coords[1] * coords[1]).sqrt();
+                                    assert!(
+                                        dist <= max_radius + 1e-6,
+                                        "Path A endpoint ({}, {}) at distance {} exceeds max radius {} in {}",
+                                        coords[0], coords[1], dist, max_radius, file_name
+                                    );
+                                }
+                                i += 7;
+                            } else {
+                                i += 1;
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
 }
