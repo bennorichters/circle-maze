@@ -577,12 +577,10 @@ mod tests {
                             } else {
                                 end_angle + DEGREES_IN_CIRCLE - start_angle
                             }
+                        } else if start_angle >= end_angle {
+                            start_angle - end_angle
                         } else {
-                            if start_angle >= end_angle {
-                                start_angle - end_angle
-                            } else {
-                                start_angle + DEGREES_IN_CIRCLE - end_angle
-                            }
+                            start_angle + DEGREES_IN_CIRCLE - end_angle
                         };
 
                         if large_arc_flag == 1 && angle_diff < DEGREES_IN_SEMICIRCLE {
