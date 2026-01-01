@@ -1,0 +1,127 @@
+{
+  "arcs": [
+    {
+      "arc": 4,
+      "circle": 2
+    },
+    {
+      "arc": 5,
+      "circle": 2
+    },
+    {
+      "arc": 6,
+      "circle": 2
+    },
+    {
+      "arc": 1,
+      "circle": 1
+    },
+    {
+      "arc": 2,
+      "circle": 1
+    },
+    {
+      "arc": 3,
+      "circle": 1
+    },
+    {
+      "arc": 9,
+      "circle": 2
+    },
+    {
+      "arc": 2,
+      "circle": 2
+    },
+    {
+      "arc": 1,
+      "circle": 2
+    },
+    {
+      "arc": 8,
+      "circle": 2
+    },
+    {
+      "arc": 5,
+      "circle": 1
+    },
+    {
+      "arc": 0,
+      "circle": 3
+    },
+    {
+      "arc": 1,
+      "circle": 3
+    },
+    {
+      "arc": 2,
+      "circle": 3
+    },
+    {
+      "arc": 3,
+      "circle": 3
+    },
+    {
+      "arc": 4,
+      "circle": 3
+    },
+    {
+      "arc": 5,
+      "circle": 3
+    },
+    {
+      "arc": 6,
+      "circle": 3
+    },
+    {
+      "arc": 7,
+      "circle": 3
+    },
+    {
+      "arc": 8,
+      "circle": 3
+    },
+    {
+      "arc": 9,
+      "circle": 3
+    },
+    {
+      "arc": 10,
+      "circle": 3
+    },
+    {
+      "arc": 11,
+      "circle": 3
+    }
+  ],
+  "circles": 3,
+  "lines": [
+    {
+      "arc": 3,
+      "circle": 2
+    },
+    {
+      "arc": 5,
+      "circle": 2
+    },
+    {
+      "arc": 3,
+      "circle": 1
+    },
+    {
+      "arc": 10,
+      "circle": 2
+    },
+    {
+      "arc": 11,
+      "circle": 2
+    },
+    {
+      "arc": 0,
+      "circle": 1
+    },
+    {
+      "arc": 0,
+      "circle": 2
+    }
+  ]
+}
