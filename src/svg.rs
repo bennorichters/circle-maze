@@ -476,7 +476,7 @@ fn polar_to_cartesian(radius: usize, angle: &fraction::Fraction) -> Point {
 mod tests {
     use super::*;
 
-    fn count_steps_in_border_lines(svg_string: &str) -> Vec<usize> {
+    fn count_steps_in_border_lines(svg_string: &str) -> usize {
         let doc = roxmltree::Document::parse(svg_string)
             .expect("Failed to parse SVG XML");
 
@@ -485,7 +485,7 @@ mod tests {
             .find(|n| n.tag_name().name() == "g" && n.attribute("id") == Some("borders"))
             .expect("Failed to find g element with id='borders'");
 
-        let mut steps = Vec::new();
+        let mut total_steps = 0;
 
         for node in borders_g.children() {
             if node.tag_name().name() == "line" {
@@ -508,11 +508,11 @@ mod tests {
 
                 let length = ((x2 - x1).powi(2) + (y2 - y1).powi(2)).sqrt();
                 let step_count = (length / CIRCLE_RADIUS_STEP as f64).round() as usize;
-                steps.push(step_count);
+                total_steps += step_count;
             }
         }
 
-        steps
+        total_steps
     }
 
     #[test]
