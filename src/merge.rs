@@ -62,7 +62,7 @@ mod tests {
     use crate::maze::MazeDeserializer;
 
     fn create_test_maze() -> Maze {
-        let json_str = include_str!("../tests/fixtures/maze_4_circles.json");
+        let json_str = include_str!("../tests/fixtures/maze_04_circles_00.json");
         let json_data: serde_json::Value = serde_json::from_str(json_str).unwrap();
 
         MazeDeserializer::deserialize(json_data).expect("Failed to deserialize maze")

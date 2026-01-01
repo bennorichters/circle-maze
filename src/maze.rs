@@ -483,7 +483,7 @@ mod tests {
 
     #[test]
     fn test_deserialize_maze_with_three_circles() {
-        let json_str = include_str!("../tests/fixtures/maze_3_circles.json");
+        let json_str = include_str!("../tests/fixtures/maze_03_circles_00.json");
         let json_data: Value = serde_json::from_str(json_str).unwrap();
 
         let result = MazeDeserializer::deserialize(json_data);
@@ -495,7 +495,7 @@ mod tests {
 
     #[test]
     fn test_accessible_neighbours_4() {
-        let json_str = include_str!("../tests/fixtures/maze_5_circles.json");
+        let json_str = include_str!("../tests/fixtures/maze_05_circles_00.json");
         let json_data: Value = serde_json::from_str(json_str).unwrap();
 
         let maze = MazeDeserializer::deserialize(json_data).unwrap();
@@ -511,7 +511,7 @@ mod tests {
 
     #[test]
     fn test_accessible_neighbours_9() {
-        let json_str = include_str!("../tests/fixtures/maze_5_circles.json");
+        let json_str = include_str!("../tests/fixtures/maze_05_circles_00.json");
         let json_data: Value = serde_json::from_str(json_str).unwrap();
 
         let maze = MazeDeserializer::deserialize(json_data).unwrap();
@@ -526,7 +526,7 @@ mod tests {
 
     #[test]
     fn test_accessible_neighbours_arc_10() {
-        let json_str = include_str!("../tests/fixtures/maze_5_circles.json");
+        let json_str = include_str!("../tests/fixtures/maze_05_circles_00.json");
         let json_data: Value = serde_json::from_str(json_str).unwrap();
 
         let maze = MazeDeserializer::deserialize(json_data).unwrap();
@@ -540,7 +540,7 @@ mod tests {
 
     #[test]
     fn test_accessible_neighbours_arc_11() {
-        let json_str = include_str!("../tests/fixtures/maze_5_circles.json");
+        let json_str = include_str!("../tests/fixtures/maze_05_circles_00.json");
         let json_data: Value = serde_json::from_str(json_str).unwrap();
 
         let maze = MazeDeserializer::deserialize(json_data).unwrap();
@@ -553,7 +553,7 @@ mod tests {
 
     #[test]
     fn test_accessible_neighbours_circle_0() {
-        let json_str = include_str!("../tests/fixtures/maze_5_circles.json");
+        let json_str = include_str!("../tests/fixtures/maze_05_circles_00.json");
         let json_data: Value = serde_json::from_str(json_str).unwrap();
 
         let maze = MazeDeserializer::deserialize(json_data).unwrap();
@@ -566,7 +566,7 @@ mod tests {
 
     #[test]
     fn test_accessible_neighbours_circle_1() {
-        let json_str = include_str!("../tests/fixtures/maze_5_circles.json");
+        let json_str = include_str!("../tests/fixtures/maze_05_circles_00.json");
         let json_data: Value = serde_json::from_str(json_str).unwrap();
 
         let maze = MazeDeserializer::deserialize(json_data).unwrap();
@@ -581,7 +581,7 @@ mod tests {
 
     #[test]
     fn test_serialize_deserialize_roundtrip() {
-        let json_str = include_str!("../tests/fixtures/maze_3_circles.json");
+        let json_str = include_str!("../tests/fixtures/maze_03_circles_00.json");
         let original_json: Value = serde_json::from_str(json_str).unwrap();
         let maze = MazeDeserializer::deserialize(original_json.clone()).unwrap();
         let serialized = MazeSerializer::serialize(&maze);
