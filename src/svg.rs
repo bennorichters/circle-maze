@@ -515,6 +515,92 @@ mod tests {
         total_steps
     }
 
+    fn count_steps_in_border_arcs(svg_string: &str) -> usize {
+        let doc = roxmltree::Document::parse(svg_string)
+            .expect("Failed to parse SVG XML");
+
+        let borders_g = doc
+            .descendants()
+            .find(|n| n.tag_name().name() == "g" && n.attribute("id") == Some("borders"))
+            .expect("Failed to find g element with id='borders'");
+
+        let mut total_steps = 0;
+
+        for node in borders_g.children() {
+            if node.tag_name().name() == "circle" {
+                let r: usize = node
+                    .attribute("r")
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(0);
+
+                let circle_number = r / CIRCLE_RADIUS_STEP;
+                total_steps += calc_total_arcs(circle_number);
+            } else if node.tag_name().name() == "path" {
+                let d = node.attribute("d").unwrap_or("");
+                let parts: Vec<&str> = d.split_whitespace().collect();
+
+                if parts.len() >= 8 && parts[0] == "M" && parts[2] == "A" {
+                    let radius: usize = parts[3]
+                        .split(',')
+                        .next()
+                        .and_then(|s| s.parse().ok())
+                        .unwrap_or(0);
+
+                    let circle_number = radius / CIRCLE_RADIUS_STEP;
+
+                    let large_arc_flag: u8 = parts[5].parse().unwrap_or(0);
+                    let sweep_flag: u8 = parts[6].parse().unwrap_or(0);
+
+                    let start_coords: Vec<f64> = parts[1]
+                        .split(',')
+                        .filter_map(|s| s.parse().ok())
+                        .collect();
+                    let end_coords: Vec<f64> = parts[7]
+                        .split(',')
+                        .filter_map(|s| s.parse().ok())
+                        .collect();
+
+                    if start_coords.len() == 2 && end_coords.len() == 2 {
+                        let mut start_angle = start_coords[1].atan2(start_coords[0]).to_degrees();
+                        let mut end_angle = end_coords[1].atan2(end_coords[0]).to_degrees();
+
+                        if start_angle < 0.0 {
+                            start_angle += DEGREES_IN_CIRCLE;
+                        }
+                        if end_angle < 0.0 {
+                            end_angle += DEGREES_IN_CIRCLE;
+                        }
+
+                        let mut angle_diff = if sweep_flag == 1 {
+                            if end_angle >= start_angle {
+                                end_angle - start_angle
+                            } else {
+                                end_angle + DEGREES_IN_CIRCLE - start_angle
+                            }
+                        } else {
+                            if start_angle >= end_angle {
+                                start_angle - end_angle
+                            } else {
+                                start_angle + DEGREES_IN_CIRCLE - end_angle
+                            }
+                        };
+
+                        if large_arc_flag == 1 && angle_diff < DEGREES_IN_SEMICIRCLE {
+                            angle_diff = DEGREES_IN_CIRCLE - angle_diff;
+                        }
+
+                        let total_arcs = calc_total_arcs(circle_number);
+                        let step_count =
+                            (angle_diff * total_arcs as f64 / DEGREES_IN_CIRCLE).round() as usize;
+                        total_steps += step_count;
+                    }
+                }
+            }
+        }
+
+        total_steps
+    }
+
     #[test]
     fn test_render_with_path_has_three_g_elements_with_correct_ids() {
         use crate::maze::MazeDeserializer;
@@ -876,6 +962,58 @@ mod tests {
                 actual_step_count, expected_line_count,
                 "Border line step count {} does not match fixture line count {} for file: {}",
                 actual_step_count, expected_line_count, file_name
+            );
+        }
+    }
+
+    #[test]
+    fn test_border_arc_steps_match_fixture_arcs() {
+        use crate::maze::MazeDeserializer;
+        use std::fs;
+
+        let fixtures_dir = "tests/fixtures";
+        let entries = fs::read_dir(fixtures_dir)
+            .unwrap_or_else(|_| panic!("Failed to read directory: {}", fixtures_dir));
+
+        let json_files: Vec<_> = entries
+            .filter_map(|entry| entry.ok())
+            .filter(|entry| {
+                entry.path().extension().and_then(|s| s.to_str()) == Some("json")
+            })
+            .collect();
+
+        assert!(!json_files.is_empty(), "No JSON files found in {}", fixtures_dir);
+
+        for entry in json_files {
+            let file_path = entry.path();
+            let file_name = file_path.file_name().unwrap().to_str().unwrap();
+
+            let json_content = fs::read_to_string(&file_path)
+                .unwrap_or_else(|_| panic!("Failed to read file: {:?}", file_path));
+
+            let json_data: serde_json::Value = serde_json::from_str(&json_content)
+                .unwrap_or_else(|_| panic!("Failed to parse JSON from: {}", file_name));
+
+            let expected_arc_count = json_data["arcs"]
+                .as_array()
+                .unwrap_or_else(|| panic!("Missing 'arcs' array in {}", file_name))
+                .len();
+
+            let maze = MazeDeserializer::deserialize(json_data)
+                .unwrap_or_else(|_| panic!("Failed to deserialize maze from: {}", file_name));
+
+            let path = vec![
+                CircleCoord::create_with_arc_index(0, 0),
+                CircleCoord::create_with_arc_index(1, 0),
+            ];
+
+            let svg_string = render_with_path(&maze, &path);
+            let actual_step_count = count_steps_in_border_arcs(&svg_string);
+
+            assert_eq!(
+                actual_step_count, expected_arc_count,
+                "Border arc step count {} does not match fixture arc count {} for file: {}",
+                actual_step_count, expected_arc_count, file_name
             );
         }
     }
