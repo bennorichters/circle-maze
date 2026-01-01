@@ -99,7 +99,7 @@ fn create_svg_arc_path(
     let end = polar_to_cartesian(radius, end_angle);
 
     format!(
-        r#"  <path d="M {:.2},{:.2} A {},{} 0 {} {} {:.2},{:.2}"/>
+        r#"  <path d="M {:.8},{:.8} A {},{} 0 {} {} {:.8},{:.8}"/>
 "#,
         start.x, start.y, radius, radius, large_arc_flag, sweep_flag, end.x, end.y
     )
@@ -131,7 +131,7 @@ fn render_solution_line(
     let end = polar_to_cartesian(end_radius, end_angle);
 
     format!(
-        r#"  <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>
+        r#"  <line x1="{:.8}" y1="{:.8}" x2="{:.8}" y2="{:.8}"/>
 "#,
         start.x, start.y, end.x, end.y
     )
@@ -152,7 +152,7 @@ fn render_path_markers(path: &[CircleCoord]) -> String {
         let point = polar_to_cartesian(radius, &angle);
 
         content.push_str(&format!(
-            r#"  <circle cx="{:.2}" cy="{:.2}" r="{}"/>
+            r#"  <circle cx="{:.8}" cy="{:.8}" r="{}"/>
 "#,
             point.x, point.y, MARKER_RADIUS
         ));
@@ -232,7 +232,7 @@ fn render_lines(maze: &Maze) -> String {
         let end = polar_to_cartesian(end_radius, end_angle);
 
         content.push_str(&format!(
-            r#"  <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}"/>
+            r#"  <line x1="{:.8}" y1="{:.8}" x2="{:.8}" y2="{:.8}"/>
 "#,
             start.x, start.y, end.x, end.y
         ));
