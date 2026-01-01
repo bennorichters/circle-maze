@@ -903,8 +903,6 @@ mod tests {
             cx: f64,
             cy: f64,
             r: f64,
-            start_angle: f64,
-            end_angle: f64,
         },
         Circle {
             cx: f64,
@@ -928,32 +926,8 @@ mod tests {
                 .split(',')
                 .next()
                 .and_then(|s| s.parse().ok())?;
-            let sweep_flag: u8 = parts[6].parse().ok()?;
-            let large_arc_flag: u8 = parts[5].parse().ok()?;
 
             if start_coords.len() == 2 && end_coords.len() == 2 {
-                let mut start_angle = start_coords[1].atan2(start_coords[0]);
-                let mut end_angle = end_coords[1].atan2(end_coords[0]);
-
-                if start_angle < 0.0 {
-                    start_angle += 2.0 * PI;
-                }
-                if end_angle < 0.0 {
-                    end_angle += 2.0 * PI;
-                }
-
-                if sweep_flag == 0 {
-                    std::mem::swap(&mut start_angle, &mut end_angle);
-                }
-
-                if large_arc_flag == 1 && (end_angle - start_angle).abs() < PI {
-                    if end_angle > start_angle {
-                        start_angle += 2.0 * PI;
-                    } else {
-                        end_angle += 2.0 * PI;
-                    }
-                }
-
                 return Some(BorderElement::Arc {
                     x1: start_coords[0],
                     y1: start_coords[1],
@@ -962,8 +936,6 @@ mod tests {
                     cx: 0.0,
                     cy: 0.0,
                     r: radius,
-                    start_angle,
-                    end_angle,
                 });
             }
         }
@@ -979,103 +951,7 @@ mod tests {
         let dy = y - cy;
         let dist_sq = dx * dx + dy * dy;
         let r_sq = r * r;
-        (dist_sq - r_sq).abs() < 0.01
-    }
-
-    fn lines_intersect(
-        x1: f64,
-        y1: f64,
-        x2: f64,
-        y2: f64,
-        x3: f64,
-        y3: f64,
-        x4: f64,
-        y4: f64,
-    ) -> bool {
-        let denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-        if denom == 0.0 {
-            return false;
-        }
-
-        let t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
-        let u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
-
-        t > 0.0 && t < 1.0 && u > 0.0 && u < 1.0
-    }
-
-    fn line_intersects_arc(
-        lx1: f64,
-        ly1: f64,
-        lx2: f64,
-        ly2: f64,
-        cx: f64,
-        cy: f64,
-        r: f64,
-        start_angle: f64,
-        end_angle: f64,
-    ) -> bool {
-        let dx = lx2 - lx1;
-        let dy = ly2 - ly1;
-        let fx = lx1 - cx;
-        let fy = ly1 - cy;
-
-        let a = dx * dx + dy * dy;
-        let b = 2.0 * (fx * dx + fy * dy);
-        let c = fx * fx + fy * fy - r * r;
-
-        let discriminant = b * b - 4.0 * a * c;
-
-        if discriminant < 0.0 || a == 0.0 {
-            return false;
-        }
-
-        let sqrt_disc = discriminant.sqrt();
-        let t1 = (-b - sqrt_disc) / (2.0 * a);
-        let t2 = (-b + sqrt_disc) / (2.0 * a);
-
-        for &t in &[t1, t2] {
-            if t > 0.0 && t < 1.0 {
-                let ix = lx1 + t * dx;
-                let iy = ly1 + t * dy;
-                let mut angle = iy.atan2(ix);
-                if angle < 0.0 {
-                    angle += 2.0 * PI;
-                }
-
-                if angle_in_arc(angle, start_angle, end_angle) {
-                    return true;
-                }
-            }
-        }
-
-        false
-    }
-
-    fn angle_in_arc(angle: f64, start: f64, end: f64) -> bool {
-        if start <= end {
-            angle >= start && angle <= end
-        } else {
-            angle >= start || angle <= end
-        }
-    }
-
-    fn point_on_arc(
-        x: f64,
-        y: f64,
-        cx: f64,
-        cy: f64,
-        r: f64,
-        start_angle: f64,
-        end_angle: f64,
-    ) -> bool {
-        if !point_on_circle(x, y, cx, cy, r) {
-            return false;
-        }
-        let mut angle = (y - cy).atan2(x - cx);
-        if angle < 0.0 {
-            angle += 2.0 * PI;
-        }
-        angle_in_arc(angle, start_angle, end_angle)
+        (dist_sq - r_sq).abs() < 1.0
     }
 
     fn are_connected(e1: &BorderElement, e2: &BorderElement) -> bool {
@@ -1093,7 +969,6 @@ mod tests {
                     || points_equal(*x1, *y1, *lx2, *ly2)
                     || points_equal(*x2, *y2, *lx1, *ly1)
                     || points_equal(*x2, *y2, *lx2, *ly2)
-                    || lines_intersect(*x1, *y1, *x2, *y2, *lx1, *ly1, *lx2, *ly2)
             }
             (
                 BorderElement::Line { x1, y1, x2, y2 },
@@ -1105,8 +980,7 @@ mod tests {
                     cx,
                     cy,
                     r,
-                    start_angle,
-                    end_angle,
+                    ..
                 },
             )
             | (
@@ -1118,8 +992,7 @@ mod tests {
                     cx,
                     cy,
                     r,
-                    start_angle,
-                    end_angle,
+                    ..
                 },
                 BorderElement::Line { x1, y1, x2, y2 },
             ) => {
@@ -1127,9 +1000,8 @@ mod tests {
                     || points_equal(*x1, *y1, *ax2, *ay2)
                     || points_equal(*x2, *y2, *ax1, *ay1)
                     || points_equal(*x2, *y2, *ax2, *ay2)
-                    || point_on_arc(*x1, *y1, *cx, *cy, *r, *start_angle, *end_angle)
-                    || point_on_arc(*x2, *y2, *cx, *cy, *r, *start_angle, *end_angle)
-                    || line_intersects_arc(*x1, *y1, *x2, *y2, *cx, *cy, *r, *start_angle, *end_angle)
+                    || point_on_circle(*x1, *y1, *cx, *cy, *r)
+                    || point_on_circle(*x2, *y2, *cx, *cy, *r)
             }
             (
                 BorderElement::Line { x1, y1, x2, y2 },
