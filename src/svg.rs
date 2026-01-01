@@ -599,8 +599,10 @@ mod tests {
         total_steps
     }
 
-    #[test]
-    fn test_render_with_path_has_three_g_elements_with_correct_ids() {
+    fn for_each_fixture<F>(test_fn: F)
+    where
+        F: Fn(&str, &crate::maze::Maze, &serde_json::Value, &str),
+    {
         use crate::maze::MazeDeserializer;
         use std::fs;
 
@@ -627,7 +629,7 @@ mod tests {
             let json_data: serde_json::Value = serde_json::from_str(&json_content)
                 .unwrap_or_else(|_| panic!("Failed to parse JSON from: {}", file_name));
 
-            let maze = MazeDeserializer::deserialize(json_data)
+            let maze = MazeDeserializer::deserialize(json_data.clone())
                 .unwrap_or_else(|_| panic!("Failed to deserialize maze from: {}", file_name));
 
             let path = vec![
@@ -637,7 +639,14 @@ mod tests {
 
             let svg_string = render_with_path(&maze, &path);
 
-            let doc = roxmltree::Document::parse(&svg_string).unwrap_or_else(|_| {
+            test_fn(file_name, &maze, &json_data, &svg_string);
+        }
+    }
+
+    #[test]
+    fn test_render_with_path_has_three_g_elements_with_correct_ids() {
+        for_each_fixture(|file_name, _maze, _json_data, svg_string| {
+            let doc = roxmltree::Document::parse(svg_string).unwrap_or_else(|_| {
                 panic!("Failed to parse SVG XML for file: {}", file_name)
             });
 
@@ -679,48 +688,13 @@ mod tests {
                 "Expected g element with id='start-finish-markers' for file: {}",
                 file_name
             );
-        }
+        });
     }
 
     #[test]
     fn test_borders_do_not_intersect_solution_path() {
-        use crate::maze::MazeDeserializer;
-        use std::fs;
-
-        let fixtures_dir = "tests/fixtures";
-        let entries = fs::read_dir(fixtures_dir)
-            .unwrap_or_else(|_| panic!("Failed to read directory: {}", fixtures_dir));
-
-        let json_files: Vec<_> = entries
-            .filter_map(|entry| entry.ok())
-            .filter(|entry| {
-                entry.path().extension().and_then(|s| s.to_str()) == Some("json")
-            })
-            .collect();
-
-        assert!(!json_files.is_empty(), "No JSON files found in {}", fixtures_dir);
-
-        for entry in json_files {
-            let file_path = entry.path();
-            let file_name = file_path.file_name().unwrap().to_str().unwrap();
-
-            let json_content = fs::read_to_string(&file_path)
-                .unwrap_or_else(|_| panic!("Failed to read file: {:?}", file_path));
-
-            let json_data: serde_json::Value = serde_json::from_str(&json_content)
-                .unwrap_or_else(|_| panic!("Failed to parse JSON from: {}", file_name));
-
-            let maze = MazeDeserializer::deserialize(json_data)
-                .unwrap_or_else(|_| panic!("Failed to deserialize maze from: {}", file_name));
-
-            let path = vec![
-                CircleCoord::create_with_arc_index(0, 0),
-                CircleCoord::create_with_arc_index(1, 0),
-            ];
-
-            let svg_string = render_with_path(&maze, &path);
-
-            let doc = roxmltree::Document::parse(&svg_string).unwrap_or_else(|_| {
+        for_each_fixture(|file_name, maze, _json_data, svg_string| {
+            let doc = roxmltree::Document::parse(svg_string).unwrap_or_else(|_| {
                 panic!("Failed to parse SVG XML for file: {}", file_name)
             });
 
@@ -762,48 +736,13 @@ mod tests {
                 "Circle radius should be {} for file: {}",
                 expected_radius, file_name
             );
-        }
+        });
     }
 
     #[test]
     fn test_all_svg_elements_within_largest_circle() {
-        use crate::maze::MazeDeserializer;
-        use std::fs;
-
-        let fixtures_dir = "tests/fixtures";
-        let entries = fs::read_dir(fixtures_dir)
-            .unwrap_or_else(|_| panic!("Failed to read directory: {}", fixtures_dir));
-
-        let json_files: Vec<_> = entries
-            .filter_map(|entry| entry.ok())
-            .filter(|entry| {
-                entry.path().extension().and_then(|s| s.to_str()) == Some("json")
-            })
-            .collect();
-
-        assert!(!json_files.is_empty(), "No JSON files found in {}", fixtures_dir);
-
-        for entry in json_files {
-            let file_path = entry.path();
-            let file_name = file_path.file_name().unwrap().to_str().unwrap();
-
-            let json_content = fs::read_to_string(&file_path)
-                .unwrap_or_else(|_| panic!("Failed to read file: {:?}", file_path));
-
-            let json_data: serde_json::Value = serde_json::from_str(&json_content)
-                .unwrap_or_else(|_| panic!("Failed to parse JSON from: {}", file_name));
-
-            let maze = MazeDeserializer::deserialize(json_data)
-                .unwrap_or_else(|_| panic!("Failed to deserialize maze from: {}", file_name));
-
-            let path = vec![
-                CircleCoord::create_with_arc_index(0, 0),
-                CircleCoord::create_with_arc_index(1, 0),
-            ];
-
-            let svg_string = render_with_path(&maze, &path);
-
-            let doc = roxmltree::Document::parse(&svg_string).unwrap_or_else(|_| {
+        for_each_fixture(|file_name, maze, _json_data, svg_string| {
+            let doc = roxmltree::Document::parse(svg_string).unwrap_or_else(|_| {
                 panic!("Failed to parse SVG XML for file: {}", file_name)
             });
 
@@ -909,110 +848,42 @@ mod tests {
                     _ => {}
                 }
             }
-        }
+        });
     }
 
     #[test]
     fn test_border_line_steps_match_fixture_lines() {
-        use crate::maze::MazeDeserializer;
-        use std::fs;
-
-        let fixtures_dir = "tests/fixtures";
-        let entries = fs::read_dir(fixtures_dir)
-            .unwrap_or_else(|_| panic!("Failed to read directory: {}", fixtures_dir));
-
-        let json_files: Vec<_> = entries
-            .filter_map(|entry| entry.ok())
-            .filter(|entry| {
-                entry.path().extension().and_then(|s| s.to_str()) == Some("json")
-            })
-            .collect();
-
-        assert!(!json_files.is_empty(), "No JSON files found in {}", fixtures_dir);
-
-        for entry in json_files {
-            let file_path = entry.path();
-            let file_name = file_path.file_name().unwrap().to_str().unwrap();
-
-            let json_content = fs::read_to_string(&file_path)
-                .unwrap_or_else(|_| panic!("Failed to read file: {:?}", file_path));
-
-            let json_data: serde_json::Value = serde_json::from_str(&json_content)
-                .unwrap_or_else(|_| panic!("Failed to parse JSON from: {}", file_name));
-
+        for_each_fixture(|file_name, _maze, json_data, svg_string| {
             let expected_line_count = json_data["lines"]
                 .as_array()
                 .unwrap_or_else(|| panic!("Missing 'lines' array in {}", file_name))
                 .len();
 
-            let maze = MazeDeserializer::deserialize(json_data)
-                .unwrap_or_else(|_| panic!("Failed to deserialize maze from: {}", file_name));
-
-            let path = vec![
-                CircleCoord::create_with_arc_index(0, 0),
-                CircleCoord::create_with_arc_index(1, 0),
-            ];
-
-            let svg_string = render_with_path(&maze, &path);
-            let actual_step_count = count_steps_in_border_lines(&svg_string);
+            let actual_step_count = count_steps_in_border_lines(svg_string);
 
             assert_eq!(
                 actual_step_count, expected_line_count,
                 "Border line step count {} does not match fixture line count {} for file: {}",
                 actual_step_count, expected_line_count, file_name
             );
-        }
+        });
     }
 
     #[test]
     fn test_border_arc_steps_match_fixture_arcs() {
-        use crate::maze::MazeDeserializer;
-        use std::fs;
-
-        let fixtures_dir = "tests/fixtures";
-        let entries = fs::read_dir(fixtures_dir)
-            .unwrap_or_else(|_| panic!("Failed to read directory: {}", fixtures_dir));
-
-        let json_files: Vec<_> = entries
-            .filter_map(|entry| entry.ok())
-            .filter(|entry| {
-                entry.path().extension().and_then(|s| s.to_str()) == Some("json")
-            })
-            .collect();
-
-        assert!(!json_files.is_empty(), "No JSON files found in {}", fixtures_dir);
-
-        for entry in json_files {
-            let file_path = entry.path();
-            let file_name = file_path.file_name().unwrap().to_str().unwrap();
-
-            let json_content = fs::read_to_string(&file_path)
-                .unwrap_or_else(|_| panic!("Failed to read file: {:?}", file_path));
-
-            let json_data: serde_json::Value = serde_json::from_str(&json_content)
-                .unwrap_or_else(|_| panic!("Failed to parse JSON from: {}", file_name));
-
+        for_each_fixture(|file_name, _maze, json_data, svg_string| {
             let expected_arc_count = json_data["arcs"]
                 .as_array()
                 .unwrap_or_else(|| panic!("Missing 'arcs' array in {}", file_name))
                 .len();
 
-            let maze = MazeDeserializer::deserialize(json_data)
-                .unwrap_or_else(|_| panic!("Failed to deserialize maze from: {}", file_name));
-
-            let path = vec![
-                CircleCoord::create_with_arc_index(0, 0),
-                CircleCoord::create_with_arc_index(1, 0),
-            ];
-
-            let svg_string = render_with_path(&maze, &path);
-            let actual_step_count = count_steps_in_border_arcs(&svg_string);
+            let actual_step_count = count_steps_in_border_arcs(svg_string);
 
             assert_eq!(
                 actual_step_count, expected_arc_count,
                 "Border arc step count {} does not match fixture arc count {} for file: {}",
                 actual_step_count, expected_arc_count, file_name
             );
-        }
+        });
     }
 }
