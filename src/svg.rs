@@ -476,6 +476,45 @@ fn polar_to_cartesian(radius: usize, angle: &fraction::Fraction) -> Point {
 mod tests {
     use super::*;
 
+    fn count_steps_in_border_lines(svg_string: &str) -> Vec<usize> {
+        let doc = roxmltree::Document::parse(svg_string)
+            .expect("Failed to parse SVG XML");
+
+        let borders_g = doc
+            .descendants()
+            .find(|n| n.tag_name().name() == "g" && n.attribute("id") == Some("borders"))
+            .expect("Failed to find g element with id='borders'");
+
+        let mut steps = Vec::new();
+
+        for node in borders_g.children() {
+            if node.tag_name().name() == "line" {
+                let x1: f64 = node
+                    .attribute("x1")
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(0.0);
+                let y1: f64 = node
+                    .attribute("y1")
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(0.0);
+                let x2: f64 = node
+                    .attribute("x2")
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(0.0);
+                let y2: f64 = node
+                    .attribute("y2")
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(0.0);
+
+                let length = ((x2 - x1).powi(2) + (y2 - y1).powi(2)).sqrt();
+                let step_count = (length / CIRCLE_RADIUS_STEP as f64).round() as usize;
+                steps.push(step_count);
+            }
+        }
+
+        steps
+    }
+
     #[test]
     fn test_render_with_path_has_three_g_elements_with_correct_ids() {
         use crate::maze::MazeDeserializer;
