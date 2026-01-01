@@ -476,8 +476,133 @@ fn polar_to_cartesian(radius: usize, angle: &fraction::Fraction) -> Point {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_render_with_path_has_three_g_elements_with_correct_ids() {
+    fn count_steps_in_border_lines(svg_string: &str) -> usize {
+        let doc = roxmltree::Document::parse(svg_string)
+            .expect("Failed to parse SVG XML");
+
+        let borders_g = doc
+            .descendants()
+            .find(|n| n.tag_name().name() == "g" && n.attribute("id") == Some("borders"))
+            .expect("Failed to find g element with id='borders'");
+
+        let mut total_steps = 0;
+
+        for node in borders_g.children() {
+            if node.tag_name().name() == "line" {
+                let x1: f64 = node
+                    .attribute("x1")
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(0.0);
+                let y1: f64 = node
+                    .attribute("y1")
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(0.0);
+                let x2: f64 = node
+                    .attribute("x2")
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(0.0);
+                let y2: f64 = node
+                    .attribute("y2")
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(0.0);
+
+                let length = ((x2 - x1).powi(2) + (y2 - y1).powi(2)).sqrt();
+                let step_count = (length / CIRCLE_RADIUS_STEP as f64).round() as usize;
+                total_steps += step_count;
+            }
+        }
+
+        total_steps
+    }
+
+    fn count_steps_in_border_arcs(svg_string: &str) -> usize {
+        let doc = roxmltree::Document::parse(svg_string)
+            .expect("Failed to parse SVG XML");
+
+        let borders_g = doc
+            .descendants()
+            .find(|n| n.tag_name().name() == "g" && n.attribute("id") == Some("borders"))
+            .expect("Failed to find g element with id='borders'");
+
+        let mut total_steps = 0;
+
+        for node in borders_g.children() {
+            if node.tag_name().name() == "circle" {
+                let r: usize = node
+                    .attribute("r")
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(0);
+
+                let circle_number = r / CIRCLE_RADIUS_STEP;
+                total_steps += calc_total_arcs(circle_number);
+            } else if node.tag_name().name() == "path" {
+                let d = node.attribute("d").unwrap_or("");
+                let parts: Vec<&str> = d.split_whitespace().collect();
+
+                if parts.len() >= 8 && parts[0] == "M" && parts[2] == "A" {
+                    let radius: usize = parts[3]
+                        .split(',')
+                        .next()
+                        .and_then(|s| s.parse().ok())
+                        .unwrap_or(0);
+
+                    let circle_number = radius / CIRCLE_RADIUS_STEP;
+
+                    let large_arc_flag: u8 = parts[5].parse().unwrap_or(0);
+                    let sweep_flag: u8 = parts[6].parse().unwrap_or(0);
+
+                    let start_coords: Vec<f64> = parts[1]
+                        .split(',')
+                        .filter_map(|s| s.parse().ok())
+                        .collect();
+                    let end_coords: Vec<f64> = parts[7]
+                        .split(',')
+                        .filter_map(|s| s.parse().ok())
+                        .collect();
+
+                    if start_coords.len() == 2 && end_coords.len() == 2 {
+                        let mut start_angle = start_coords[1].atan2(start_coords[0]).to_degrees();
+                        let mut end_angle = end_coords[1].atan2(end_coords[0]).to_degrees();
+
+                        if start_angle < 0.0 {
+                            start_angle += DEGREES_IN_CIRCLE;
+                        }
+                        if end_angle < 0.0 {
+                            end_angle += DEGREES_IN_CIRCLE;
+                        }
+
+                        let mut angle_diff = if sweep_flag == 1 {
+                            if end_angle >= start_angle {
+                                end_angle - start_angle
+                            } else {
+                                end_angle + DEGREES_IN_CIRCLE - start_angle
+                            }
+                        } else if start_angle >= end_angle {
+                            start_angle - end_angle
+                        } else {
+                            start_angle + DEGREES_IN_CIRCLE - end_angle
+                        };
+
+                        if large_arc_flag == 1 && angle_diff < DEGREES_IN_SEMICIRCLE {
+                            angle_diff = DEGREES_IN_CIRCLE - angle_diff;
+                        }
+
+                        let total_arcs = calc_total_arcs(circle_number);
+                        let step_count =
+                            (angle_diff * total_arcs as f64 / DEGREES_IN_CIRCLE).round() as usize;
+                        total_steps += step_count;
+                    }
+                }
+            }
+        }
+
+        total_steps
+    }
+
+    fn for_each_fixture<F>(test_fn: F)
+    where
+        F: Fn(&str, &crate::maze::Maze, &serde_json::Value, &str),
+    {
         use crate::maze::MazeDeserializer;
         use std::fs;
 
@@ -504,7 +629,7 @@ mod tests {
             let json_data: serde_json::Value = serde_json::from_str(&json_content)
                 .unwrap_or_else(|_| panic!("Failed to parse JSON from: {}", file_name));
 
-            let maze = MazeDeserializer::deserialize(json_data)
+            let maze = MazeDeserializer::deserialize(json_data.clone())
                 .unwrap_or_else(|_| panic!("Failed to deserialize maze from: {}", file_name));
 
             let path = vec![
@@ -514,7 +639,14 @@ mod tests {
 
             let svg_string = render_with_path(&maze, &path);
 
-            let doc = roxmltree::Document::parse(&svg_string).unwrap_or_else(|_| {
+            test_fn(file_name, &maze, &json_data, &svg_string);
+        }
+    }
+
+    #[test]
+    fn test_render_with_path_has_three_g_elements_with_correct_ids() {
+        for_each_fixture(|file_name, _maze, _json_data, svg_string| {
+            let doc = roxmltree::Document::parse(svg_string).unwrap_or_else(|_| {
                 panic!("Failed to parse SVG XML for file: {}", file_name)
             });
 
@@ -556,6 +688,202 @@ mod tests {
                 "Expected g element with id='start-finish-markers' for file: {}",
                 file_name
             );
-        }
+        });
+    }
+
+    #[test]
+    fn test_borders_do_not_intersect_solution_path() {
+        for_each_fixture(|file_name, maze, _json_data, svg_string| {
+            let doc = roxmltree::Document::parse(svg_string).unwrap_or_else(|_| {
+                panic!("Failed to parse SVG XML for file: {}", file_name)
+            });
+
+            let borders_g = doc
+                .descendants()
+                .find(|n| {
+                    n.tag_name().name() == "g" && n.attribute("id") == Some("borders")
+                })
+                .unwrap_or_else(|| {
+                    panic!("Failed to find g element with id='borders' for file: {}", file_name)
+                });
+
+            let circle_elements: Vec<_> = borders_g
+                .children()
+                .filter(|n| n.tag_name().name() == "circle")
+                .collect();
+
+            assert_eq!(
+                circle_elements.len(),
+                1,
+                "Expected exactly 1 circle element in borders g for file: {}",
+                file_name
+            );
+
+            let circle = circle_elements[0];
+            let radius_str = circle
+                .attribute("r")
+                .unwrap_or_else(|| {
+                    panic!("Circle element missing r attribute for file: {}", file_name)
+                });
+
+            let radius: usize = radius_str.parse().unwrap_or_else(|_| {
+                panic!("Failed to parse radius value '{}' for file: {}", radius_str, file_name)
+            });
+
+            let expected_radius = maze.circles() * CIRCLE_RADIUS_STEP;
+            assert_eq!(
+                radius, expected_radius,
+                "Circle radius should be {} for file: {}",
+                expected_radius, file_name
+            );
+        });
+    }
+
+    #[test]
+    fn test_all_svg_elements_within_largest_circle() {
+        for_each_fixture(|file_name, maze, _json_data, svg_string| {
+            let doc = roxmltree::Document::parse(svg_string).unwrap_or_else(|_| {
+                panic!("Failed to parse SVG XML for file: {}", file_name)
+            });
+
+            let max_radius = (maze.circles() * CIRCLE_RADIUS_STEP + HALF_RADIUS_STEP) as f64;
+
+            for node in doc.descendants() {
+                match node.tag_name().name() {
+                    "circle" => {
+                        let cx: f64 = node
+                            .attribute("cx")
+                            .and_then(|v| v.parse().ok())
+                            .unwrap_or(0.0);
+                        let cy: f64 = node
+                            .attribute("cy")
+                            .and_then(|v| v.parse().ok())
+                            .unwrap_or(0.0);
+                        let r: f64 = node
+                            .attribute("r")
+                            .and_then(|v| v.parse().ok())
+                            .unwrap_or(0.0);
+
+                        let distance_from_origin = (cx * cx + cy * cy).sqrt();
+                        let max_extent = distance_from_origin + r;
+
+                        assert!(
+                            max_extent <= max_radius + 1e-6,
+                            "Circle at ({}, {}) with radius {} exceeds max radius {} in {}",
+                            cx, cy, r, max_radius, file_name
+                        );
+                    }
+                    "line" => {
+                        let x1: f64 = node
+                            .attribute("x1")
+                            .and_then(|v| v.parse().ok())
+                            .unwrap_or(0.0);
+                        let y1: f64 = node
+                            .attribute("y1")
+                            .and_then(|v| v.parse().ok())
+                            .unwrap_or(0.0);
+                        let x2: f64 = node
+                            .attribute("x2")
+                            .and_then(|v| v.parse().ok())
+                            .unwrap_or(0.0);
+                        let y2: f64 = node
+                            .attribute("y2")
+                            .and_then(|v| v.parse().ok())
+                            .unwrap_or(0.0);
+
+                        let dist1 = (x1 * x1 + y1 * y1).sqrt();
+                        let dist2 = (x2 * x2 + y2 * y2).sqrt();
+
+                        assert!(
+                            dist1 <= max_radius + 1e-6,
+                            "Line start ({}, {}) at distance {} exceeds max radius {} in {}",
+                            x1, y1, dist1, max_radius, file_name
+                        );
+                        assert!(
+                            dist2 <= max_radius + 1e-6,
+                            "Line end ({}, {}) at distance {} exceeds max radius {} in {}",
+                            x2, y2, dist2, max_radius, file_name
+                        );
+                    }
+                    "path" => {
+                        let d = node.attribute("d").unwrap_or("");
+
+                        let parts: Vec<&str> = d.split_whitespace().collect();
+                        let mut i = 0;
+
+                        while i < parts.len() {
+                            if parts[i] == "M" && i + 1 < parts.len() {
+                                let coords: Vec<f64> = parts[i + 1]
+                                    .split(',')
+                                    .filter_map(|s| s.parse().ok())
+                                    .collect();
+                                if coords.len() == 2 {
+                                    let dist = (coords[0] * coords[0] + coords[1] * coords[1]).sqrt();
+                                    assert!(
+                                        dist <= max_radius + 1e-6,
+                                        "Path M point ({}, {}) at distance {} exceeds max radius {} in {}",
+                                        coords[0], coords[1], dist, max_radius, file_name
+                                    );
+                                }
+                                i += 2;
+                            } else if parts[i] == "A" && i + 6 < parts.len() {
+                                let coords: Vec<f64> = parts[i + 6]
+                                    .split(',')
+                                    .filter_map(|s| s.parse().ok())
+                                    .collect();
+                                if coords.len() == 2 {
+                                    let dist = (coords[0] * coords[0] + coords[1] * coords[1]).sqrt();
+                                    assert!(
+                                        dist <= max_radius + 1e-6,
+                                        "Path A endpoint ({}, {}) at distance {} exceeds max radius {} in {}",
+                                        coords[0], coords[1], dist, max_radius, file_name
+                                    );
+                                }
+                                i += 7;
+                            } else {
+                                i += 1;
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        });
+    }
+
+    #[test]
+    fn test_border_line_steps_match_fixture_lines() {
+        for_each_fixture(|file_name, _maze, json_data, svg_string| {
+            let expected_line_count = json_data["lines"]
+                .as_array()
+                .unwrap_or_else(|| panic!("Missing 'lines' array in {}", file_name))
+                .len();
+
+            let actual_step_count = count_steps_in_border_lines(svg_string);
+
+            assert_eq!(
+                actual_step_count, expected_line_count,
+                "Border line step count {} does not match fixture line count {} for file: {}",
+                actual_step_count, expected_line_count, file_name
+            );
+        });
+    }
+
+    #[test]
+    fn test_border_arc_steps_match_fixture_arcs() {
+        for_each_fixture(|file_name, _maze, json_data, svg_string| {
+            let expected_arc_count = json_data["arcs"]
+                .as_array()
+                .unwrap_or_else(|| panic!("Missing 'arcs' array in {}", file_name))
+                .len();
+
+            let actual_step_count = count_steps_in_border_arcs(svg_string);
+
+            assert_eq!(
+                actual_step_count, expected_arc_count,
+                "Border arc step count {} does not match fixture arc count {} for file: {}",
+                actual_step_count, expected_arc_count, file_name
+            );
+        });
     }
 }
