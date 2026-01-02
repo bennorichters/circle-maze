@@ -1,12 +1,13 @@
 use crate::circle_coord::{CircleCoord, calc_total_arcs};
 use rand::{Rng, seq::SliceRandom};
 use serde_json::Value;
+use std::collections::HashSet;
 
 #[derive(Debug)]
 pub struct Maze {
     circles: usize,
-    arcs: Vec<CircleCoord>,
-    lines: Vec<CircleCoord>,
+    arcs: HashSet<CircleCoord>,
+    lines: HashSet<CircleCoord>,
 }
 
 impl Maze {
@@ -14,11 +15,11 @@ impl Maze {
         self.circles
     }
 
-    pub fn arcs(&self) -> &Vec<CircleCoord> {
+    pub fn arcs(&self) -> &HashSet<CircleCoord> {
         &self.arcs
     }
 
-    pub fn lines(&self) -> &Vec<CircleCoord> {
+    pub fn lines(&self) -> &HashSet<CircleCoord> {
         &self.lines
     }
 
@@ -114,8 +115,7 @@ impl Maze {
     pub fn tree_diameter(&self) -> Vec<CircleCoord> {
         let start = CircleCoord::create_with_arc_index(0, 0);
         let first_end = self.find_farthest_node(&start);
-        let second_end = self.find_farthest_node(&first_end);
-        self.find_path(first_end, second_end)
+        self.find_farthest_with_path(&first_end)
     }
 
     fn find_farthest_node(&self, start: &CircleCoord) -> CircleCoord {
@@ -140,6 +140,39 @@ impl Maze {
         }
 
         farthest
+    }
+
+    fn find_farthest_with_path(&self, start: &CircleCoord) -> Vec<CircleCoord> {
+        use std::collections::{VecDeque, HashMap};
+
+        let mut queue = VecDeque::new();
+        let mut parent: HashMap<CircleCoord, Option<CircleCoord>> = HashMap::new();
+        let mut farthest = start.clone();
+
+        queue.push_back(start.clone());
+        parent.insert(start.clone(), None);
+
+        while let Some(current) = queue.pop_front() {
+            farthest = current.clone();
+
+            for neighbor in self.accessible_neighbours(&current) {
+                if !parent.contains_key(&neighbor) {
+                    parent.insert(neighbor.clone(), Some(current.clone()));
+                    queue.push_back(neighbor);
+                }
+            }
+        }
+
+        let mut path = Vec::new();
+        let mut node = Some(farthest);
+
+        while let Some(n) = node {
+            path.push(n.clone());
+            node = parent.get(&n).and_then(|p| p.clone());
+        }
+
+        path.reverse();
+        path
     }
 }
 
@@ -214,8 +247,8 @@ fn perform_random_walk<R: Rng>(
     outer: usize,
     path: &mut [bool],
     used: &mut [bool],
-    lines: &mut Vec<CircleCoord>,
-    arcs: &mut Vec<CircleCoord>,
+    lines: &mut HashSet<CircleCoord>,
+    arcs: &mut HashSet<CircleCoord>,
     rng: &mut R,
 ) {
     path.fill(false);
@@ -247,9 +280,9 @@ fn perform_random_walk<R: Rng>(
 
         let edge = if candidate.2.uses_branch() { branch } else { leaf };
         if candidate.2.is_arc_direction() {
-            arcs.push(edge);
+            arcs.insert(edge);
         } else {
-            lines.push(edge);
+            lines.insert(edge);
         }
 
         if used[leaf_index] {
@@ -267,9 +300,9 @@ fn build_spanning_tree<R: Rng>(
     path: &mut [bool],
     used: &mut [bool],
     rng: &mut R,
-) -> (Vec<CircleCoord>, Vec<CircleCoord>) {
-    let mut lines = Vec::new();
-    let mut arcs = Vec::new();
+) -> (HashSet<CircleCoord>, HashSet<CircleCoord>) {
+    let mut lines = HashSet::new();
+    let mut arcs = HashSet::new();
 
     for f in free {
         let index = coord_to_index(f.0, f.1, outer);
@@ -283,10 +316,10 @@ fn build_spanning_tree<R: Rng>(
     (lines, arcs)
 }
 
-fn add_outer_boundary(mut arcs: Vec<CircleCoord>, circles: usize) -> Vec<CircleCoord> {
+fn add_outer_boundary(mut arcs: HashSet<CircleCoord>, circles: usize) -> HashSet<CircleCoord> {
     let outer = calc_total_arcs(circles);
     for i in 0..outer {
-        arcs.push(CircleCoord::create_with_arc_index(circles, i));
+        arcs.insert(CircleCoord::create_with_arc_index(circles, i));
     }
     arcs
 }
@@ -324,7 +357,7 @@ impl MazeDeserializer {
             .as_array()
             .ok_or("'arcs' must be an array")?;
 
-        let mut arcs = Vec::new();
+        let mut arcs = HashSet::new();
         for (i, arc_obj) in arcs_array.iter().enumerate() {
             let arc_map = arc_obj
                 .as_object()
@@ -344,7 +377,7 @@ impl MazeDeserializer {
                 .ok_or(format!("arcs[{}].arc must be a number", i))? as usize;
 
             let coord = CircleCoord::create_with_arc_index(circle, arc);
-            arcs.push(coord);
+            arcs.insert(coord);
         }
 
         let lines_array = obj
@@ -353,7 +386,7 @@ impl MazeDeserializer {
             .as_array()
             .ok_or("'lines' must be an array")?;
 
-        let mut lines = Vec::new();
+        let mut lines = HashSet::new();
         for (i, line_obj) in lines_array.iter().enumerate() {
             let line_map = line_obj
                 .as_object()
@@ -374,7 +407,7 @@ impl MazeDeserializer {
                 as usize;
 
             let coord = CircleCoord::create_with_arc_index(circle, arc);
-            lines.push(coord);
+            lines.insert(coord);
         }
 
         Ok(Maze {
@@ -588,18 +621,8 @@ mod tests {
         let deserialized_maze = MazeDeserializer::deserialize(serialized).unwrap();
 
         assert_eq!(maze.circles(), deserialized_maze.circles());
-        assert_eq!(maze.arcs().len(), deserialized_maze.arcs().len());
-        assert_eq!(maze.lines().len(), deserialized_maze.lines().len());
-
-        for (original, deserialized) in maze.arcs().iter().zip(deserialized_maze.arcs().iter()) {
-            assert_eq!(original.circle(), deserialized.circle());
-            assert_eq!(original.arc_index(), deserialized.arc_index());
-        }
-
-        for (original, deserialized) in maze.lines().iter().zip(deserialized_maze.lines().iter()) {
-            assert_eq!(original.circle(), deserialized.circle());
-            assert_eq!(original.arc_index(), deserialized.arc_index());
-        }
+        assert_eq!(maze.arcs(), deserialized_maze.arcs());
+        assert_eq!(maze.lines(), deserialized_maze.lines());
     }
 
     #[test]
@@ -613,7 +636,7 @@ mod tests {
         let deserialized = MazeDeserializer::deserialize(serialized).unwrap();
 
         assert_eq!(maze.circles(), deserialized.circles());
-        assert_eq!(maze.arcs().len(), deserialized.arcs().len());
-        assert_eq!(maze.lines().len(), deserialized.lines().len());
+        assert_eq!(maze.arcs(), deserialized.arcs());
+        assert_eq!(maze.lines(), deserialized.lines());
     }
 }

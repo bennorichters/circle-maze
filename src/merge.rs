@@ -1,17 +1,18 @@
 use crate::circle_coord::CircleCoord;
 use crate::maze::Maze;
 
-fn merge_coordinates<F>(
-    coordinates: &[CircleCoord],
+fn merge_coordinates<'a, I, F>(
+    coordinates: I,
     get_next: F,
     allow_closed: bool,
 ) -> Vec<(CircleCoord, CircleCoord)>
 where
+    I: IntoIterator<Item = &'a CircleCoord>,
     F: Fn(&CircleCoord) -> CircleCoord,
 {
     let mut result: Vec<(CircleCoord, CircleCoord)> = Vec::new();
 
-    for coord in coordinates.iter() {
+    for coord in coordinates {
         let start = coord.clone();
         let end = get_next(coord);
 
