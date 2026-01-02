@@ -5,7 +5,7 @@ pub const DEGREES_IN_CIRCLE: f64 = 360.0;
 pub const DEGREES_IN_SEMICIRCLE: f64 = 180.0;
 pub const CIRCLE_RADIUS_STEP: usize = 10;
 pub const HALF_RADIUS_STEP: usize = 5;
-pub const COORDINATE_EPSILON: f64 = 1e-10;
+const COORDINATE_EPSILON: f64 = 1e-10;
 
 pub struct Point {
     pub x: f64,
@@ -16,7 +16,7 @@ pub fn fraction_to_degrees(angle: &fraction::Fraction) -> f64 {
     (*angle.numer().unwrap() as f64) / (*angle.denom().unwrap() as f64)
 }
 
-pub fn angle_to_radians(angle: &fraction::Fraction) -> f64 {
+fn angle_to_radians(angle: &fraction::Fraction) -> f64 {
     let degrees = fraction_to_degrees(angle);
     degrees * PI / DEGREES_IN_SEMICIRCLE
 }

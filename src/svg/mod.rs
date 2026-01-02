@@ -6,7 +6,7 @@ mod solution_path;
 use crate::circle_coord::CircleCoord;
 use crate::maze::Maze;
 
-use borders::{render_arcs, render_lines};
+use borders::render_borders;
 use geometry::CIRCLE_RADIUS_STEP;
 use markers::render_path_markers;
 use solution_path::render_solution_path;
@@ -20,9 +20,7 @@ pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
 
     let mut svg_content = String::new();
     svg_content.push_str(&render_svg_header(view_size));
-    svg_content.push_str(&render_arcs(maze));
-    svg_content.push_str(&render_lines(maze));
-    svg_content.push_str("</g>\n");
+    svg_content.push_str(&render_borders(maze));
     svg_content.push_str(&render_solution_path(path));
     svg_content.push_str(&render_path_markers(path));
     svg_content.push_str("</svg>\n");
@@ -33,7 +31,6 @@ fn render_svg_header(view_size: usize) -> String {
     format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="{} {} {} {}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" shape-rendering="geometricPrecision">
-<g id="borders" fill="none" stroke="black" stroke-width="1" stroke-linecap="round">
 "#,
         -(view_size as i32) / 2,
         -(view_size as i32) / 2,
