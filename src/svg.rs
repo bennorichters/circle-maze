@@ -41,6 +41,13 @@ impl PathSegment {
             }
         }
     }
+
+    fn end_angle(&self) -> fraction::Fraction {
+        match self {
+            PathSegment::Arc { end_angle, .. } => *end_angle,
+            PathSegment::Line { angle, .. } => *angle,
+        }
+    }
 }
 
 pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
@@ -140,11 +147,7 @@ fn render_path_markers(path: &[CircleCoord]) -> String {
     content.push_str(r#"<g id="start-finish-markers" fill="red">
 "#);
 
-    for (index, coord) in path.iter().enumerate() {
-        if index != 0 && index != path.len() - 1 {
-            continue;
-        }
-
+    for coord in [path.first(), path.last()].into_iter().flatten() {
         let radius = calc_display_radius(coord.circle());
         let angle = calc_display_angle(coord);
         let point = polar_to_cartesian(radius, &angle);
@@ -260,14 +263,6 @@ fn find_line_end_index(path: &[CircleCoord], start: usize) -> usize {
     end
 }
 
-fn get_last_segment_end_angle(segments: &[PathSegment]) -> Option<fraction::Fraction> {
-    match segments.last() {
-        Some(PathSegment::Line { angle, .. }) => Some(*angle),
-        Some(PathSegment::Arc { end_angle, .. }) => Some(*end_angle),
-        None => None,
-    }
-}
-
 fn add_arc_segment(
     segments: &mut Vec<PathSegment>,
     path: &[CircleCoord],
@@ -281,12 +276,9 @@ fn add_arc_segment(
     let next_angle_deg = fraction_to_degrees(path[start_idx + 1].angle());
     let is_clockwise = clockwise(start_angle_deg, next_angle_deg);
 
-    let mut start_angle = calc_display_angle(start);
+    let start_angle = segments.last().map(|s| s.end_angle())
+        .unwrap_or_else(|| calc_display_angle(start));
     let end_angle = calc_display_angle(&path[end_idx]);
-
-    if let Some(last_angle) = get_last_segment_end_angle(segments) {
-        start_angle = last_angle;
-    }
 
     segments.push(PathSegment::Arc {
         radius,
@@ -302,15 +294,7 @@ fn adjust_line_angle(
     start_angle: fraction::Fraction,
     end_angle: fraction::Fraction,
 ) -> fraction::Fraction {
-    if start_angle != end_angle {
-        if start_radius < end_radius {
-            end_angle
-        } else {
-            start_angle
-        }
-    } else {
-        start_angle
-    }
+    if start_radius < end_radius { end_angle } else { start_angle }
 }
 
 fn add_connecting_arc_if_needed(
@@ -418,11 +402,7 @@ fn normalize_angle_diff(diff: f64) -> f64 {
 }
 
 fn calc_large_arc_flag(angle_diff: f64) -> u8 {
-    if angle_diff > DEGREES_IN_SEMICIRCLE {
-        1
-    } else {
-        0
-    }
+    u8::from(angle_diff > DEGREES_IN_SEMICIRCLE)
 }
 
 fn calc_arc_angle_diff(start_deg: f64, end_deg: f64, is_clockwise: bool) -> f64 {
