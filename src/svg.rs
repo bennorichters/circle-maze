@@ -1260,57 +1260,7 @@ mod tests {
     }
 
     #[test]
-    fn test_solution_path_elements_are_connected() {
-        for_each_fixture(|file_name, _maze, _json_data, svg_string| {
-            let (endpoints, edges) = extract_solution_path_edges(svg_string, file_name);
-
-            if edges.is_empty() {
-                return;
-            }
-
-            let mut degree = vec![0usize; endpoints.len()];
-            for &(a, b) in &edges {
-                degree[a] += 1;
-                degree[b] += 1;
-            }
-
-            let endpoints_with_degree_one: Vec<usize> = degree
-                .iter()
-                .enumerate()
-                .filter(|(_, &d)| d == 1)
-                .map(|(i, _)| i)
-                .collect();
-
-            assert_eq!(
-                endpoints_with_degree_one.len(),
-                2,
-                "Expected exactly 2 unconnected endpoints (start and end of path), found {} in {}",
-                endpoints_with_degree_one.len(),
-                file_name
-            );
-
-            let mut adjacency = vec![Vec::new(); endpoints.len()];
-            for &(a, b) in &edges {
-                adjacency[a].push(b);
-                adjacency[b].push(a);
-            }
-
-            let mut visited = vec![false; endpoints.len()];
-            dfs_visit(&adjacency, 0, &mut visited);
-
-            for (i, &v) in visited.iter().enumerate() {
-                assert!(
-                    v,
-                    "Endpoint {} is not connected to the main path in file: {}",
-                    i,
-                    file_name
-                );
-            }
-        });
-    }
-
-    #[test]
-    fn test_solution_path_endpoints_match_markers() {
+    fn test_solution_path_is_connected_and_matches_markers() {
         for_each_fixture(|file_name, _maze, _json_data, svg_string| {
             let doc = roxmltree::Document::parse(svg_string).unwrap_or_else(|_| {
                 panic!("Failed to parse SVG XML for file: {}", file_name)
@@ -1350,10 +1300,28 @@ mod tests {
             assert_eq!(
                 path_endpoints.len(),
                 2,
-                "Expected exactly 2 path endpoints, found {} in {}",
+                "Expected exactly 2 path endpoints (start and end), found {} in {}",
                 path_endpoints.len(),
                 file_name
             );
+
+            let mut adjacency = vec![Vec::new(); endpoints.len()];
+            for &(a, b) in &edges {
+                adjacency[a].push(b);
+                adjacency[b].push(a);
+            }
+
+            let mut visited = vec![false; endpoints.len()];
+            dfs_visit(&adjacency, 0, &mut visited);
+
+            for (i, &v) in visited.iter().enumerate() {
+                assert!(
+                    v,
+                    "Endpoint {} is not connected to the main path in file: {}",
+                    i,
+                    file_name
+                );
+            }
 
             let marker_centers: Vec<Endpoint> = markers_g
                 .children()
