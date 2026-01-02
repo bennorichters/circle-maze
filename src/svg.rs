@@ -570,6 +570,20 @@ mod tests {
         total_steps
     }
 
+    fn generate_test_path(circles: usize) -> Vec<CircleCoord> {
+        let mut path = Vec::new();
+        path.push(CircleCoord::create_with_arc_index(0, 0));
+        for c in 1..=circles {
+            path.push(CircleCoord::create_with_arc_index(c, 0));
+        }
+        let outer_circle = circles;
+        let total_arcs = calc_total_arcs(outer_circle);
+        for a in 1..(total_arcs / 2) {
+            path.push(CircleCoord::create_with_arc_index(outer_circle, a));
+        }
+        path
+    }
+
     fn for_each_fixture<F>(test_fn: F)
     where
         F: Fn(&str, &crate::maze::Maze, &serde_json::Value, &str),
@@ -603,11 +617,7 @@ mod tests {
             let maze = MazeDeserializer::deserialize(json_data.clone())
                 .unwrap_or_else(|_| panic!("Failed to deserialize maze from: {}", file_name));
 
-            let path = vec![
-                CircleCoord::create_with_arc_index(0, 0),
-                CircleCoord::create_with_arc_index(1, 0),
-            ];
-
+            let path = generate_test_path(maze.circles());
             let svg_string = render_with_path(&maze, &path);
 
             test_fn(file_name, &maze, &json_data, &svg_string);
@@ -718,6 +728,7 @@ mod tests {
             });
 
             let max_radius = (maze.circles() * CIRCLE_RADIUS_STEP + HALF_RADIUS_STEP) as f64;
+            let max_radius_with_markers = max_radius + MARKER_RADIUS as f64;
 
             for node in doc.descendants() {
                 match node.tag_name().name() {
@@ -738,10 +749,17 @@ mod tests {
                         let distance_from_origin = (cx * cx + cy * cy).sqrt();
                         let max_extent = distance_from_origin + r;
 
+                        let is_marker = (r - MARKER_RADIUS as f64).abs() < 1e-6;
+                        let allowed_radius = if is_marker {
+                            max_radius_with_markers
+                        } else {
+                            max_radius
+                        };
+
                         assert!(
-                            max_extent <= max_radius + 1e-6,
+                            max_extent <= allowed_radius + 1e-6,
                             "Circle at ({}, {}) with radius {} exceeds max radius {} in {}",
-                            cx, cy, r, max_radius, file_name
+                            cx, cy, r, allowed_radius, file_name
                         );
                     }
                     "line" => {
@@ -1196,86 +1214,58 @@ mod tests {
         }
     }
 
-    fn generate_test_path(circles: usize) -> Vec<CircleCoord> {
-        let mut path = Vec::new();
-        path.push(CircleCoord::create_with_arc_index(0, 0));
-        for c in 1..=circles {
-            path.push(CircleCoord::create_with_arc_index(c, 0));
+    fn parse_marker_center(node: &roxmltree::Node) -> Option<Endpoint> {
+        let cx: f64 = node.attribute("cx")?.parse().ok()?;
+        let cy: f64 = node.attribute("cy")?.parse().ok()?;
+        Some(Endpoint::new(cx, cy))
+    }
+
+    fn extract_solution_path_edges(
+        svg_string: &str,
+        file_name: &str,
+    ) -> (Vec<Endpoint>, Vec<(usize, usize)>) {
+        let doc = roxmltree::Document::parse(svg_string).unwrap_or_else(|_| {
+            panic!("Failed to parse SVG XML for file: {}", file_name)
+        });
+
+        let solution_path_g = doc
+            .descendants()
+            .find(|n| n.tag_name().name() == "g" && n.attribute("id") == Some("solution-path"))
+            .unwrap_or_else(|| {
+                panic!("Failed to find g element with id='solution-path' for file: {}", file_name)
+            });
+
+        let mut endpoints: Vec<Endpoint> = Vec::new();
+        let mut edges: Vec<(usize, usize)> = Vec::new();
+        let epsilon = 1e-6;
+
+        for node in solution_path_g.children() {
+            let parsed = match node.tag_name().name() {
+                "line" => parse_solution_line_endpoints(&node),
+                "path" => parse_solution_arc_endpoints(&node),
+                _ => None,
+            };
+
+            if let Some((start, end)) = parsed {
+                if start.approx_eq(&end, epsilon) {
+                    continue;
+                }
+                let start_idx = add_or_find_endpoint(&mut endpoints, start, epsilon);
+                let end_idx = add_or_find_endpoint(&mut endpoints, end, epsilon);
+                edges.push((start_idx, end_idx));
+            }
         }
-        let outer_circle = circles;
-        let total_arcs = calc_total_arcs(outer_circle);
-        for a in 1..(total_arcs / 2) {
-            path.push(CircleCoord::create_with_arc_index(outer_circle, a));
-        }
-        path
+
+        (endpoints, edges)
     }
 
     #[test]
     fn test_solution_path_elements_are_connected() {
-        use crate::maze::MazeDeserializer;
-        use std::fs;
-
-        let fixtures_dir = "tests/fixtures";
-        let entries = fs::read_dir(fixtures_dir)
-            .unwrap_or_else(|_| panic!("Failed to read directory: {}", fixtures_dir));
-
-        let json_files: Vec<_> = entries
-            .filter_map(|entry| entry.ok())
-            .filter(|entry| entry.path().extension().and_then(|s| s.to_str()) == Some("json"))
-            .collect();
-
-        assert!(!json_files.is_empty(), "No JSON files found in {}", fixtures_dir);
-
-        for entry in json_files {
-            let file_path = entry.path();
-            let file_name = file_path.file_name().unwrap().to_str().unwrap();
-
-            let json_content = fs::read_to_string(&file_path)
-                .unwrap_or_else(|_| panic!("Failed to read file: {:?}", file_path));
-
-            let json_data: serde_json::Value = serde_json::from_str(&json_content)
-                .unwrap_or_else(|_| panic!("Failed to parse JSON from: {}", file_name));
-
-            let maze = MazeDeserializer::deserialize(json_data)
-                .unwrap_or_else(|_| panic!("Failed to deserialize maze from: {}", file_name));
-
-            let path = generate_test_path(maze.circles());
-            let svg_string = render_with_path(&maze, &path);
-
-            let doc = roxmltree::Document::parse(&svg_string).unwrap_or_else(|_| {
-                panic!("Failed to parse SVG XML for file: {}", file_name)
-            });
-
-            let solution_path_g = doc
-                .descendants()
-                .find(|n| n.tag_name().name() == "g" && n.attribute("id") == Some("solution-path"))
-                .unwrap_or_else(|| {
-                    panic!("Failed to find g element with id='solution-path' for file: {}", file_name)
-                });
-
-            let mut endpoints: Vec<Endpoint> = Vec::new();
-            let mut edges: Vec<(usize, usize)> = Vec::new();
-            let epsilon = 1e-6;
-
-            for node in solution_path_g.children() {
-                let parsed = match node.tag_name().name() {
-                    "line" => parse_solution_line_endpoints(&node),
-                    "path" => parse_solution_arc_endpoints(&node),
-                    _ => None,
-                };
-
-                if let Some((start, end)) = parsed {
-                    if start.approx_eq(&end, epsilon) {
-                        continue;
-                    }
-                    let start_idx = add_or_find_endpoint(&mut endpoints, start, epsilon);
-                    let end_idx = add_or_find_endpoint(&mut endpoints, end, epsilon);
-                    edges.push((start_idx, end_idx));
-                }
-            }
+        for_each_fixture(|file_name, _maze, _json_data, svg_string| {
+            let (endpoints, edges) = extract_solution_path_edges(svg_string, file_name);
 
             if edges.is_empty() {
-                continue;
+                return;
             }
 
             let mut degree = vec![0usize; endpoints.len()];
@@ -1316,57 +1306,15 @@ mod tests {
                     file_name
                 );
             }
-        }
-    }
-
-    fn parse_marker_center(node: &roxmltree::Node) -> Option<Endpoint> {
-        let cx: f64 = node.attribute("cx")?.parse().ok()?;
-        let cy: f64 = node.attribute("cy")?.parse().ok()?;
-        Some(Endpoint::new(cx, cy))
+        });
     }
 
     #[test]
     fn test_solution_path_endpoints_match_markers() {
-        use crate::maze::MazeDeserializer;
-        use std::fs;
-
-        let fixtures_dir = "tests/fixtures";
-        let entries = fs::read_dir(fixtures_dir)
-            .unwrap_or_else(|_| panic!("Failed to read directory: {}", fixtures_dir));
-
-        let json_files: Vec<_> = entries
-            .filter_map(|entry| entry.ok())
-            .filter(|entry| entry.path().extension().and_then(|s| s.to_str()) == Some("json"))
-            .collect();
-
-        assert!(!json_files.is_empty(), "No JSON files found in {}", fixtures_dir);
-
-        for entry in json_files {
-            let file_path = entry.path();
-            let file_name = file_path.file_name().unwrap().to_str().unwrap();
-
-            let json_content = fs::read_to_string(&file_path)
-                .unwrap_or_else(|_| panic!("Failed to read file: {:?}", file_path));
-
-            let json_data: serde_json::Value = serde_json::from_str(&json_content)
-                .unwrap_or_else(|_| panic!("Failed to parse JSON from: {}", file_name));
-
-            let maze = MazeDeserializer::deserialize(json_data)
-                .unwrap_or_else(|_| panic!("Failed to deserialize maze from: {}", file_name));
-
-            let path = generate_test_path(maze.circles());
-            let svg_string = render_with_path(&maze, &path);
-
-            let doc = roxmltree::Document::parse(&svg_string).unwrap_or_else(|_| {
+        for_each_fixture(|file_name, _maze, _json_data, svg_string| {
+            let doc = roxmltree::Document::parse(svg_string).unwrap_or_else(|_| {
                 panic!("Failed to parse SVG XML for file: {}", file_name)
             });
-
-            let solution_path_g = doc
-                .descendants()
-                .find(|n| n.tag_name().name() == "g" && n.attribute("id") == Some("solution-path"))
-                .unwrap_or_else(|| {
-                    panic!("Failed to find g element with id='solution-path' for file: {}", file_name)
-                });
 
             let markers_g = doc
                 .descendants()
@@ -1380,29 +1328,10 @@ mod tests {
                     )
                 });
 
-            let mut endpoints: Vec<Endpoint> = Vec::new();
-            let mut edges: Vec<(usize, usize)> = Vec::new();
-            let epsilon = 1e-6;
-
-            for node in solution_path_g.children() {
-                let parsed = match node.tag_name().name() {
-                    "line" => parse_solution_line_endpoints(&node),
-                    "path" => parse_solution_arc_endpoints(&node),
-                    _ => None,
-                };
-
-                if let Some((start, end)) = parsed {
-                    if start.approx_eq(&end, epsilon) {
-                        continue;
-                    }
-                    let start_idx = add_or_find_endpoint(&mut endpoints, start, epsilon);
-                    let end_idx = add_or_find_endpoint(&mut endpoints, end, epsilon);
-                    edges.push((start_idx, end_idx));
-                }
-            }
+            let (endpoints, edges) = extract_solution_path_edges(svg_string, file_name);
 
             if edges.is_empty() {
-                continue;
+                return;
             }
 
             let mut degree = vec![0usize; endpoints.len()];
@@ -1440,6 +1369,7 @@ mod tests {
                 file_name
             );
 
+            let epsilon = 1e-6;
             for marker in &marker_centers {
                 let matches = path_endpoints.iter().any(|ep| ep.approx_eq(marker, epsilon));
                 assert!(
@@ -1450,6 +1380,6 @@ mod tests {
                     file_name
                 );
             }
-        }
+        });
     }
 }
