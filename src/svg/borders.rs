@@ -64,3 +64,15 @@ pub fn render_lines(maze: &Maze) -> String {
 
     content
 }
+
+pub fn render_borders(maze: &Maze) -> String {
+    let mut content = String::new();
+    content.push_str(
+        r#"<g id="borders" fill="none" stroke="black" stroke-width="1" stroke-linecap="round">
+"#,
+    );
+    content.push_str(&render_arcs(maze));
+    content.push_str(&render_lines(maze));
+    content.push_str("</g>\n");
+    content
+}
