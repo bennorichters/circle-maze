@@ -11,6 +11,10 @@ Available as both a CLI tool and a WebAssembly web application.
 - Save/load mazes as JSON
 - WebAssembly-powered web interface
 
+## Screenshot
+
+![Circle Maze](assets/maze.png)
+
 ## CLI Usage
 
 ### Generate a new maze
