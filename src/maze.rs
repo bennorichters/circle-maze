@@ -1,5 +1,5 @@
-use crate::circle_coord::{CircleCoord, calc_total_arcs};
-use rand::{Rng, seq::SliceRandom};
+use crate::circle_coord::{calc_total_arcs, CircleCoord};
+use rand::{seq::SliceRandom, Rng};
 use serde_json::Value;
 use std::collections::HashSet;
 
@@ -81,7 +81,7 @@ impl Maze {
     }
 
     fn find_farthest_node(&self, start: &CircleCoord) -> CircleCoord {
-        use std::collections::{VecDeque, HashSet};
+        use std::collections::{HashSet, VecDeque};
 
         let mut queue = VecDeque::new();
         let mut visited = HashSet::new();
@@ -105,7 +105,7 @@ impl Maze {
     }
 
     fn find_farthest_with_path(&self, start: &CircleCoord) -> Vec<CircleCoord> {
-        use std::collections::{VecDeque, HashMap};
+        use std::collections::{HashMap, VecDeque};
 
         let mut queue = VecDeque::new();
         let mut parent: HashMap<CircleCoord, Option<CircleCoord>> = HashMap::new();
@@ -240,7 +240,11 @@ fn perform_random_walk<R: Rng>(
 
         candidates.extend(create_direction_candidates(leaf.circle(), leaf.arc_index()));
 
-        let edge = if candidate.2.uses_branch() { branch } else { leaf };
+        let edge = if candidate.2.uses_branch() {
+            branch
+        } else {
+            leaf
+        };
         if candidate.2.is_arc_direction() {
             arcs.insert(edge);
         } else {
@@ -422,8 +426,8 @@ mod tests {
 
     #[test]
     fn test_factory_creates_spanning_tree() {
-        use rand::SeedableRng;
         use rand::rngs::StdRng;
+        use rand::SeedableRng;
         use std::collections::HashSet;
 
         let seeds = [42, 123, 456, 789, 1024];
@@ -589,8 +593,8 @@ mod tests {
 
     #[test]
     fn test_serialize_generated_maze() {
-        use rand::SeedableRng;
         use rand::rngs::StdRng;
+        use rand::SeedableRng;
 
         let mut rng = StdRng::seed_from_u64(42);
         let maze = factory(4, &mut rng);

@@ -43,12 +43,11 @@ fn render_svg_header(view_size: usize) -> String {
 mod tests {
     use super::*;
     use crate::circle_coord::calc_total_arcs;
-    use geometry::{HALF_RADIUS_STEP, DEGREES_IN_CIRCLE, DEGREES_IN_SEMICIRCLE};
+    use geometry::{DEGREES_IN_CIRCLE, DEGREES_IN_SEMICIRCLE, HALF_RADIUS_STEP};
     use markers::MARKER_RADIUS;
 
     fn count_steps_in_border_lines(svg_string: &str) -> usize {
-        let doc = roxmltree::Document::parse(svg_string)
-            .expect("Failed to parse SVG XML");
+        let doc = roxmltree::Document::parse(svg_string).expect("Failed to parse SVG XML");
 
         let borders_g = doc
             .descendants()
@@ -86,8 +85,7 @@ mod tests {
     }
 
     fn count_steps_in_border_arcs(svg_string: &str) -> usize {
-        let doc = roxmltree::Document::parse(svg_string)
-            .expect("Failed to parse SVG XML");
+        let doc = roxmltree::Document::parse(svg_string).expect("Failed to parse SVG XML");
 
         let borders_g = doc
             .descendants()
@@ -121,14 +119,10 @@ mod tests {
                     let large_arc_flag: u8 = parts[5].parse().unwrap_or(0);
                     let sweep_flag: u8 = parts[6].parse().unwrap_or(0);
 
-                    let start_coords: Vec<f64> = parts[1]
-                        .split(',')
-                        .filter_map(|s| s.parse().ok())
-                        .collect();
-                    let end_coords: Vec<f64> = parts[7]
-                        .split(',')
-                        .filter_map(|s| s.parse().ok())
-                        .collect();
+                    let start_coords: Vec<f64> =
+                        parts[1].split(',').filter_map(|s| s.parse().ok()).collect();
+                    let end_coords: Vec<f64> =
+                        parts[7].split(',').filter_map(|s| s.parse().ok()).collect();
 
                     if start_coords.len() == 2 && end_coords.len() == 2 {
                         let mut start_angle = start_coords[1].atan2(start_coords[0]).to_degrees();
@@ -196,12 +190,14 @@ mod tests {
 
         let json_files: Vec<_> = entries
             .filter_map(|entry| entry.ok())
-            .filter(|entry| {
-                entry.path().extension().and_then(|s| s.to_str()) == Some("json")
-            })
+            .filter(|entry| entry.path().extension().and_then(|s| s.to_str()) == Some("json"))
             .collect();
 
-        assert!(!json_files.is_empty(), "No JSON files found in {}", fixtures_dir);
+        assert!(
+            !json_files.is_empty(),
+            "No JSON files found in {}",
+            fixtures_dir
+        );
 
         for entry in json_files {
             let file_path = entry.path();
@@ -226,9 +222,8 @@ mod tests {
     #[test]
     fn test_render_with_path_has_three_g_elements_with_correct_ids() {
         for_each_fixture(|file_name, _maze, _json_data, svg_string| {
-            let doc = roxmltree::Document::parse(svg_string).unwrap_or_else(|_| {
-                panic!("Failed to parse SVG XML for file: {}", file_name)
-            });
+            let doc = roxmltree::Document::parse(svg_string)
+                .unwrap_or_else(|_| panic!("Failed to parse SVG XML for file: {}", file_name));
 
             let g_elements: Vec<_> = doc
                 .descendants()
@@ -274,17 +269,17 @@ mod tests {
     #[test]
     fn test_borders_do_not_intersect_solution_path() {
         for_each_fixture(|file_name, maze, _json_data, svg_string| {
-            let doc = roxmltree::Document::parse(svg_string).unwrap_or_else(|_| {
-                panic!("Failed to parse SVG XML for file: {}", file_name)
-            });
+            let doc = roxmltree::Document::parse(svg_string)
+                .unwrap_or_else(|_| panic!("Failed to parse SVG XML for file: {}", file_name));
 
             let borders_g = doc
                 .descendants()
-                .find(|n| {
-                    n.tag_name().name() == "g" && n.attribute("id") == Some("borders")
-                })
+                .find(|n| n.tag_name().name() == "g" && n.attribute("id") == Some("borders"))
                 .unwrap_or_else(|| {
-                    panic!("Failed to find g element with id='borders' for file: {}", file_name)
+                    panic!(
+                        "Failed to find g element with id='borders' for file: {}",
+                        file_name
+                    )
                 });
 
             let circle_elements: Vec<_> = borders_g
@@ -300,14 +295,15 @@ mod tests {
             );
 
             let circle = circle_elements[0];
-            let radius_str = circle
-                .attribute("r")
-                .unwrap_or_else(|| {
-                    panic!("Circle element missing r attribute for file: {}", file_name)
-                });
+            let radius_str = circle.attribute("r").unwrap_or_else(|| {
+                panic!("Circle element missing r attribute for file: {}", file_name)
+            });
 
             let radius: usize = radius_str.parse().unwrap_or_else(|_| {
-                panic!("Failed to parse radius value '{}' for file: {}", radius_str, file_name)
+                panic!(
+                    "Failed to parse radius value '{}' for file: {}",
+                    radius_str, file_name
+                )
             });
 
             let expected_radius = maze.circles() * CIRCLE_RADIUS_STEP;
@@ -322,9 +318,8 @@ mod tests {
     #[test]
     fn test_all_svg_elements_within_largest_circle() {
         for_each_fixture(|file_name, maze, _json_data, svg_string| {
-            let doc = roxmltree::Document::parse(svg_string).unwrap_or_else(|_| {
-                panic!("Failed to parse SVG XML for file: {}", file_name)
-            });
+            let doc = roxmltree::Document::parse(svg_string)
+                .unwrap_or_else(|_| panic!("Failed to parse SVG XML for file: {}", file_name));
 
             let max_radius = (maze.circles() * CIRCLE_RADIUS_STEP + HALF_RADIUS_STEP) as f64;
             let max_radius_with_markers = max_radius + MARKER_RADIUS as f64;
@@ -358,7 +353,11 @@ mod tests {
                         assert!(
                             max_extent <= allowed_radius + 1e-6,
                             "Circle at ({}, {}) with radius {} exceeds max radius {} in {}",
-                            cx, cy, r, allowed_radius, file_name
+                            cx,
+                            cy,
+                            r,
+                            allowed_radius,
+                            file_name
                         );
                     }
                     "line" => {
@@ -385,12 +384,20 @@ mod tests {
                         assert!(
                             dist1 <= max_radius + 1e-6,
                             "Line start ({}, {}) at distance {} exceeds max radius {} in {}",
-                            x1, y1, dist1, max_radius, file_name
+                            x1,
+                            y1,
+                            dist1,
+                            max_radius,
+                            file_name
                         );
                         assert!(
                             dist2 <= max_radius + 1e-6,
                             "Line end ({}, {}) at distance {} exceeds max radius {} in {}",
-                            x2, y2, dist2, max_radius, file_name
+                            x2,
+                            y2,
+                            dist2,
+                            max_radius,
+                            file_name
                         );
                     }
                     "path" => {
@@ -406,7 +413,8 @@ mod tests {
                                     .filter_map(|s| s.parse().ok())
                                     .collect();
                                 if coords.len() == 2 {
-                                    let dist = (coords[0] * coords[0] + coords[1] * coords[1]).sqrt();
+                                    let dist =
+                                        (coords[0] * coords[0] + coords[1] * coords[1]).sqrt();
                                     assert!(
                                         dist <= max_radius + 1e-6,
                                         "Path M point ({}, {}) at distance {} exceeds max radius {} in {}",
@@ -420,7 +428,8 @@ mod tests {
                                     .filter_map(|s| s.parse().ok())
                                     .collect();
                                 if coords.len() == 2 {
-                                    let dist = (coords[0] * coords[0] + coords[1] * coords[1]).sqrt();
+                                    let dist =
+                                        (coords[0] * coords[0] + coords[1] * coords[1]).sqrt();
                                     assert!(
                                         dist <= max_radius + 1e-6,
                                         "Path A endpoint ({}, {}) at distance {} exceeds max radius {} in {}",
@@ -502,18 +511,10 @@ mod tests {
     fn parse_arc_from_path(d: &str) -> Option<BorderElement> {
         let parts: Vec<&str> = d.split_whitespace().collect();
         if parts.len() >= 8 && parts[0] == "M" && parts[2] == "A" {
-            let start_coords: Vec<f64> = parts[1]
-                .split(',')
-                .filter_map(|s| s.parse().ok())
-                .collect();
-            let end_coords: Vec<f64> = parts[7]
-                .split(',')
-                .filter_map(|s| s.parse().ok())
-                .collect();
-            let radius: f64 = parts[3]
-                .split(',')
-                .next()
-                .and_then(|s| s.parse().ok())?;
+            let start_coords: Vec<f64> =
+                parts[1].split(',').filter_map(|s| s.parse().ok()).collect();
+            let end_coords: Vec<f64> = parts[7].split(',').filter_map(|s| s.parse().ok()).collect();
+            let radius: f64 = parts[3].split(',').next().and_then(|s| s.parse().ok())?;
 
             if start_coords.len() == 2 && end_coords.len() == 2 {
                 return Some(BorderElement::Arc {
@@ -591,25 +592,12 @@ mod tests {
                     || point_on_circle(*x1, *y1, *cx, *cy, *r)
                     || point_on_circle(*x2, *y2, *cx, *cy, *r)
             }
-            (
-                BorderElement::Line { x1, y1, x2, y2 },
-                BorderElement::Circle { cx, cy, r },
-            )
-            | (
-                BorderElement::Circle { cx, cy, r },
-                BorderElement::Line { x1, y1, x2, y2 },
-            ) => {
-                point_on_circle(*x1, *y1, *cx, *cy, *r)
-                    || point_on_circle(*x2, *y2, *cx, *cy, *r)
+            (BorderElement::Line { x1, y1, x2, y2 }, BorderElement::Circle { cx, cy, r })
+            | (BorderElement::Circle { cx, cy, r }, BorderElement::Line { x1, y1, x2, y2 }) => {
+                point_on_circle(*x1, *y1, *cx, *cy, *r) || point_on_circle(*x2, *y2, *cx, *cy, *r)
             }
             (
-                BorderElement::Arc {
-                    x1,
-                    y1,
-                    x2,
-                    y2,
-                    ..
-                },
+                BorderElement::Arc { x1, y1, x2, y2, .. },
                 BorderElement::Arc {
                     x1: ax1,
                     y1: ay1,
@@ -623,28 +611,9 @@ mod tests {
                     || points_equal(*x2, *y2, *ax1, *ay1)
                     || points_equal(*x2, *y2, *ax2, *ay2)
             }
-            (
-                BorderElement::Arc {
-                    x1,
-                    y1,
-                    x2,
-                    y2,
-                    ..
-                },
-                BorderElement::Circle { cx, cy, r },
-            )
-            | (
-                BorderElement::Circle { cx, cy, r },
-                BorderElement::Arc {
-                    x1,
-                    y1,
-                    x2,
-                    y2,
-                    ..
-                },
-            ) => {
-                point_on_circle(*x1, *y1, *cx, *cy, *r)
-                    || point_on_circle(*x2, *y2, *cx, *cy, *r)
+            (BorderElement::Arc { x1, y1, x2, y2, .. }, BorderElement::Circle { cx, cy, r })
+            | (BorderElement::Circle { cx, cy, r }, BorderElement::Arc { x1, y1, x2, y2, .. }) => {
+                point_on_circle(*x1, *y1, *cx, *cy, *r) || point_on_circle(*x2, *y2, *cx, *cy, *r)
             }
             (BorderElement::Circle { .. }, BorderElement::Circle { .. }) => false,
         }
@@ -662,9 +631,8 @@ mod tests {
     #[test]
     fn test_borders_form_connected_graph() {
         for_each_fixture(|file_name, _maze, _json_data, svg_string| {
-            let doc = roxmltree::Document::parse(svg_string).unwrap_or_else(|_| {
-                panic!("Failed to parse SVG XML for file: {}", file_name)
-            });
+            let doc = roxmltree::Document::parse(svg_string)
+                .unwrap_or_else(|_| panic!("Failed to parse SVG XML for file: {}", file_name));
 
             let borders_g = doc
                 .descendants()
@@ -747,8 +715,7 @@ mod tests {
                 assert!(
                     v,
                     "Border element {} is not connected to the main graph in file: {}",
-                    i,
-                    file_name
+                    i, file_name
                 );
             }
         });
@@ -782,14 +749,9 @@ mod tests {
         let d = node.attribute("d")?;
         let parts: Vec<&str> = d.split_whitespace().collect();
         if parts.len() >= 8 && parts[0] == "M" && parts[2] == "A" {
-            let start_coords: Vec<f64> = parts[1]
-                .split(',')
-                .filter_map(|s| s.parse().ok())
-                .collect();
-            let end_coords: Vec<f64> = parts[7]
-                .split(',')
-                .filter_map(|s| s.parse().ok())
-                .collect();
+            let start_coords: Vec<f64> =
+                parts[1].split(',').filter_map(|s| s.parse().ok()).collect();
+            let end_coords: Vec<f64> = parts[7].split(',').filter_map(|s| s.parse().ok()).collect();
             if start_coords.len() == 2 && end_coords.len() == 2 {
                 return Some((
                     Endpoint::new(start_coords[0], start_coords[1]),
@@ -800,7 +762,11 @@ mod tests {
         None
     }
 
-    fn find_endpoint_index(endpoints: &[Endpoint], target: &Endpoint, epsilon: f64) -> Option<usize> {
+    fn find_endpoint_index(
+        endpoints: &[Endpoint],
+        target: &Endpoint,
+        epsilon: f64,
+    ) -> Option<usize> {
         endpoints.iter().position(|e| e.approx_eq(target, epsilon))
     }
 
@@ -823,15 +789,17 @@ mod tests {
         svg_string: &str,
         file_name: &str,
     ) -> (Vec<Endpoint>, Vec<(usize, usize)>) {
-        let doc = roxmltree::Document::parse(svg_string).unwrap_or_else(|_| {
-            panic!("Failed to parse SVG XML for file: {}", file_name)
-        });
+        let doc = roxmltree::Document::parse(svg_string)
+            .unwrap_or_else(|_| panic!("Failed to parse SVG XML for file: {}", file_name));
 
         let solution_path_g = doc
             .descendants()
             .find(|n| n.tag_name().name() == "g" && n.attribute("id") == Some("solution-path"))
             .unwrap_or_else(|| {
-                panic!("Failed to find g element with id='solution-path' for file: {}", file_name)
+                panic!(
+                    "Failed to find g element with id='solution-path' for file: {}",
+                    file_name
+                )
             });
 
         let mut endpoints: Vec<Endpoint> = Vec::new();
@@ -861,9 +829,8 @@ mod tests {
     #[test]
     fn test_solution_path_is_connected_and_matches_markers() {
         for_each_fixture(|file_name, _maze, _json_data, svg_string| {
-            let doc = roxmltree::Document::parse(svg_string).unwrap_or_else(|_| {
-                panic!("Failed to parse SVG XML for file: {}", file_name)
-            });
+            let doc = roxmltree::Document::parse(svg_string)
+                .unwrap_or_else(|_| panic!("Failed to parse SVG XML for file: {}", file_name));
 
             let markers_g = doc
                 .descendants()
@@ -917,8 +884,7 @@ mod tests {
                 assert!(
                     v,
                     "Endpoint {} is not connected to the main path in file: {}",
-                    i,
-                    file_name
+                    i, file_name
                 );
             }
 
@@ -938,13 +904,13 @@ mod tests {
 
             let epsilon = 1e-6;
             for marker in &marker_centers {
-                let matches = path_endpoints.iter().any(|ep| ep.approx_eq(marker, epsilon));
+                let matches = path_endpoints
+                    .iter()
+                    .any(|ep| ep.approx_eq(marker, epsilon));
                 assert!(
                     matches,
                     "Marker at ({}, {}) does not match any path endpoint in {}",
-                    marker.x,
-                    marker.y,
-                    file_name
+                    marker.x, marker.y, file_name
                 );
             }
         });
