@@ -1,7 +1,7 @@
 use crate::{
     json::parse_json_file,
     maze::{MazeDeserializer, MazeSerializer, factory},
-    svg::render_with_path,
+    svg::render,
     circle_coord::CircleCoord,
 };
 use clap::Parser;
@@ -14,11 +14,12 @@ mod maze;
 mod merge;
 mod svg;
 
-fn render_with_path_to_file(
+fn render_to_file(
     maze: &crate::maze::Maze,
-    path: &[CircleCoord]
+    path: &[CircleCoord],
+    include_path: bool
 ) -> std::io::Result<()> {
-    let svg_content = render_with_path(maze, path);
+    let svg_content = render(maze, path, include_path);
     let mut file = File::create("maze.svg")?;
     file.write_all(svg_content.as_bytes())?;
     Ok(())
@@ -33,6 +34,9 @@ struct Cli {
 
     #[arg(long)]
     create: Option<usize>,
+
+    #[arg(long)]
+    no_path: bool,
 }
 
 fn main() {
@@ -57,5 +61,5 @@ fn main() {
     };
 
     let path = maze.tree_diameter();
-    render_with_path_to_file(&maze, &path).expect("Failed to render SVG");
+    render_to_file(&maze, &path, !cli.no_path).expect("Failed to render SVG");
 }
