@@ -1144,9 +1144,9 @@ mod tests {
             let mut visited = vec![false; n];
             dfs_visit(&graph, 0, &mut visited);
 
-            for i in 0..n {
+            for (i, &v) in visited.iter().enumerate() {
                 assert!(
-                    visited[i],
+                    v,
                     "Border element {} is not connected to the main graph in file: {}",
                     i,
                     file_name
