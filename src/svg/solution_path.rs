@@ -5,6 +5,7 @@ use super::geometry::{
     create_svg_arc_path, fraction_to_degrees, polar_to_cartesian, HALF_RADIUS_STEP,
 };
 
+#[derive(Clone)]
 enum PathSegment {
     Arc {
         radius: usize,
@@ -15,7 +16,8 @@ enum PathSegment {
     Line {
         start_radius: usize,
         end_radius: usize,
-        angle: fraction::Fraction,
+        start_angle: fraction::Fraction,
+        end_angle: fraction::Fraction,
     },
 }
 
@@ -25,8 +27,8 @@ impl PathSegment {
             PathSegment::Arc { radius, start_angle, end_angle, clockwise } => {
                 render_solution_arc(*radius, start_angle, end_angle, *clockwise)
             }
-            PathSegment::Line { start_radius, end_radius, angle } => {
-                render_solution_line(*start_radius, *end_radius, angle)
+            PathSegment::Line { start_radius, end_radius, start_angle, end_angle } => {
+                render_solution_line(*start_radius, *end_radius, start_angle, end_angle)
             }
         }
     }
@@ -34,7 +36,7 @@ impl PathSegment {
     fn end_angle(&self) -> fraction::Fraction {
         match self {
             PathSegment::Arc { end_angle, .. } => *end_angle,
-            PathSegment::Line { angle, .. } => *angle,
+            PathSegment::Line { end_angle, .. } => *end_angle,
         }
     }
 }
@@ -73,10 +75,11 @@ fn render_solution_arc(
 fn render_solution_line(
     start_radius: usize,
     end_radius: usize,
-    angle: &fraction::Fraction,
+    start_angle: &fraction::Fraction,
+    end_angle: &fraction::Fraction,
 ) -> String {
-    let start = polar_to_cartesian(start_radius, angle);
-    let end = polar_to_cartesian(end_radius, angle);
+    let start = polar_to_cartesian(start_radius, start_angle);
+    let end = polar_to_cartesian(end_radius, end_angle);
 
     format!(
         r#"  <line x1="{:.8}" y1="{:.8}" x2="{:.8}" y2="{:.8}"/>
@@ -140,55 +143,74 @@ fn adjust_line_angle(
     if start_radius < end_radius { end_angle } else { start_angle }
 }
 
+fn is_opposite_direction(angle1: &fraction::Fraction, angle2: &fraction::Fraction) -> bool {
+    let diff = (fraction_to_degrees(angle1) - fraction_to_degrees(angle2)).abs();
+    (diff - 180.0).abs() < 0.0001
+}
+
 fn add_connecting_arc_if_needed(
     segments: &mut Vec<PathSegment>,
     start: &CircleCoord,
     start_radius: usize,
-    line_angle: fraction::Fraction,
-) -> usize {
+    line_start_angle: fraction::Fraction,
+    line_end_angle: fraction::Fraction,
+    line_end_radius: usize,
+) -> Option<usize> {
     if let Some(PathSegment::Arc { end_angle, .. }) = segments.last_mut() {
-        *end_angle = line_angle;
-        return start_radius;
+        *end_angle = line_start_angle;
+        return Some(start_radius);
     }
 
-    if let Some(PathSegment::Line { angle, end_radius, .. }) = segments.last() {
-        let prev_angle = *angle;
-        let prev_end_radius = *end_radius;
-
+    if let Some(PathSegment::Line { end_angle: prev_end_angle, end_radius: prev_end_radius, .. }) =
+        segments.last().cloned()
+    {
         if start_radius > 0 {
-            let is_cw = clockwise(fraction_to_degrees(&prev_angle), fraction_to_degrees(&line_angle));
+            let is_cw = clockwise(
+                fraction_to_degrees(&prev_end_angle),
+                fraction_to_degrees(&line_start_angle),
+            );
             segments.push(PathSegment::Arc {
                 radius: start_radius,
-                start_angle: prev_angle,
-                end_angle: line_angle,
+                start_angle: prev_end_angle,
+                end_angle: line_start_angle,
                 clockwise: is_cw,
             });
-            return start_radius;
+            return Some(start_radius);
         } else if prev_end_radius == 0 {
+            if is_opposite_direction(&prev_end_angle, &line_end_angle) {
+                if let Some(PathSegment::Line { end_radius, end_angle, .. }) = segments.last_mut() {
+                    *end_radius = line_end_radius;
+                    *end_angle = line_end_angle;
+                }
+                return None;
+            }
             if let Some(PathSegment::Line { end_radius, .. }) = segments.last_mut() {
                 *end_radius = HALF_RADIUS_STEP;
             }
-            let is_cw = clockwise(fraction_to_degrees(&prev_angle), fraction_to_degrees(&line_angle));
+            let is_cw = clockwise(
+                fraction_to_degrees(&prev_end_angle),
+                fraction_to_degrees(&line_start_angle),
+            );
             segments.push(PathSegment::Arc {
                 radius: HALF_RADIUS_STEP,
-                start_angle: prev_angle,
-                end_angle: line_angle,
+                start_angle: prev_end_angle,
+                end_angle: line_start_angle,
                 clockwise: is_cw,
             });
-            return HALF_RADIUS_STEP;
+            return Some(HALF_RADIUS_STEP);
         }
-        return start_radius;
+        return Some(start_radius);
     }
 
     let ea = calc_display_angle(start);
-    let is_cw = clockwise(fraction_to_degrees(&ea), fraction_to_degrees(&line_angle));
+    let is_cw = clockwise(fraction_to_degrees(&ea), fraction_to_degrees(&line_start_angle));
     segments.push(PathSegment::Arc {
         radius: start_radius,
         start_angle: ea,
-        end_angle: line_angle,
+        end_angle: line_start_angle,
         clockwise: is_cw,
     });
-    start_radius
+    Some(start_radius)
 }
 
 fn add_line_segment(
@@ -205,25 +227,35 @@ fn add_line_segment(
 
     let angle = adjust_line_angle(start_radius, end_radius, initial_start_angle, initial_end_angle);
 
-    let adjusted_start_radius = add_connecting_arc_if_needed(segments, start, start_radius, angle);
-
-    segments.push(PathSegment::Line {
-        start_radius: adjusted_start_radius,
-        end_radius,
+    let maybe_start_radius = add_connecting_arc_if_needed(
+        segments,
+        start,
+        start_radius,
         angle,
-    });
+        initial_end_angle,
+        end_radius,
+    );
+
+    if let Some(adjusted_start_radius) = maybe_start_radius {
+        segments.push(PathSegment::Line {
+            start_radius: adjusted_start_radius,
+            end_radius,
+            start_angle: angle,
+            end_angle: angle,
+        });
+    }
 }
 
 fn add_final_arc_if_needed(segments: &mut Vec<PathSegment>, path: &[CircleCoord]) {
-    if let Some(PathSegment::Line { angle, .. }) = segments.last() {
+    if let Some(PathSegment::Line { end_angle, .. }) = segments.last() {
         let last_coord = &path[path.len() - 1];
         let finish_radius = calc_display_radius(last_coord.circle());
         let finish_angle = calc_display_angle(last_coord);
-        let is_cw = clockwise(fraction_to_degrees(angle), fraction_to_degrees(&finish_angle));
+        let is_cw = clockwise(fraction_to_degrees(end_angle), fraction_to_degrees(&finish_angle));
 
         segments.push(PathSegment::Arc {
             radius: finish_radius,
-            start_angle: *angle,
+            start_angle: *end_angle,
             end_angle: finish_angle,
             clockwise: is_cw,
         });
