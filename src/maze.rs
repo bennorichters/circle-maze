@@ -115,8 +115,7 @@ impl Maze {
     pub fn tree_diameter(&self) -> Vec<CircleCoord> {
         let start = CircleCoord::create_with_arc_index(0, 0);
         let first_end = self.find_farthest_node(&start);
-        let second_end = self.find_farthest_node(&first_end);
-        self.find_path(first_end, second_end)
+        self.find_farthest_with_path(&first_end)
     }
 
     fn find_farthest_node(&self, start: &CircleCoord) -> CircleCoord {
@@ -141,6 +140,39 @@ impl Maze {
         }
 
         farthest
+    }
+
+    fn find_farthest_with_path(&self, start: &CircleCoord) -> Vec<CircleCoord> {
+        use std::collections::{VecDeque, HashMap};
+
+        let mut queue = VecDeque::new();
+        let mut parent: HashMap<CircleCoord, Option<CircleCoord>> = HashMap::new();
+        let mut farthest = start.clone();
+
+        queue.push_back(start.clone());
+        parent.insert(start.clone(), None);
+
+        while let Some(current) = queue.pop_front() {
+            farthest = current.clone();
+
+            for neighbor in self.accessible_neighbours(&current) {
+                if !parent.contains_key(&neighbor) {
+                    parent.insert(neighbor.clone(), Some(current.clone()));
+                    queue.push_back(neighbor);
+                }
+            }
+        }
+
+        let mut path = Vec::new();
+        let mut node = Some(farthest);
+
+        while let Some(n) = node {
+            path.push(n.clone());
+            node = parent.get(&n).and_then(|p| p.clone());
+        }
+
+        path.reverse();
+        path
     }
 }
 
