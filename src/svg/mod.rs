@@ -29,10 +29,6 @@ pub fn render(maze: &Maze, path: &[CircleCoord], include_path: bool) -> String {
     svg_content
 }
 
-pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
-    render(maze, path, true)
-}
-
 fn render_svg_header(view_size: usize) -> String {
     format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -219,14 +215,14 @@ mod tests {
                 .unwrap_or_else(|_| panic!("Failed to deserialize maze from: {}", file_name));
 
             let path = generate_test_path(maze.circles());
-            let svg_string = render_with_path(&maze, &path);
+            let svg_string = render(&maze, &path, true);
 
             test_fn(file_name, &maze, &json_data, &svg_string);
         }
     }
 
     #[test]
-    fn test_render_with_path_has_three_g_elements_with_correct_ids() {
+    fn test_render_has_three_g_elements_with_correct_ids() {
         for_each_fixture(|file_name, _maze, _json_data, svg_string| {
             let doc = roxmltree::Document::parse(svg_string)
                 .unwrap_or_else(|_| panic!("Failed to parse SVG XML for file: {}", file_name));
