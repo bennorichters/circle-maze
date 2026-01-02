@@ -1,6 +1,6 @@
 # Circle Maze Generator
 
-A circular maze generator that creates beautiful mazes with configurable complexity.
+A circular maze generator that creates mazes with configurable complexity.
 Available as both a CLI tool and a WebAssembly web application.
 
 ## Features
