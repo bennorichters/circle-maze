@@ -1136,4 +1136,186 @@ mod tests {
             }
         });
     }
+
+    #[derive(Debug, Clone, PartialEq)]
+    struct Endpoint {
+        x: f64,
+        y: f64,
+    }
+
+    impl Endpoint {
+        fn new(x: f64, y: f64) -> Self {
+            Self { x, y }
+        }
+
+        fn approx_eq(&self, other: &Self, epsilon: f64) -> bool {
+            (self.x - other.x).abs() < epsilon && (self.y - other.y).abs() < epsilon
+        }
+    }
+
+    fn parse_solution_line_endpoints(node: &roxmltree::Node) -> Option<(Endpoint, Endpoint)> {
+        let x1: f64 = node.attribute("x1")?.parse().ok()?;
+        let y1: f64 = node.attribute("y1")?.parse().ok()?;
+        let x2: f64 = node.attribute("x2")?.parse().ok()?;
+        let y2: f64 = node.attribute("y2")?.parse().ok()?;
+        Some((Endpoint::new(x1, y1), Endpoint::new(x2, y2)))
+    }
+
+    fn parse_solution_arc_endpoints(node: &roxmltree::Node) -> Option<(Endpoint, Endpoint)> {
+        let d = node.attribute("d")?;
+        let parts: Vec<&str> = d.split_whitespace().collect();
+        if parts.len() >= 8 && parts[0] == "M" && parts[2] == "A" {
+            let start_coords: Vec<f64> = parts[1]
+                .split(',')
+                .filter_map(|s| s.parse().ok())
+                .collect();
+            let end_coords: Vec<f64> = parts[7]
+                .split(',')
+                .filter_map(|s| s.parse().ok())
+                .collect();
+            if start_coords.len() == 2 && end_coords.len() == 2 {
+                return Some((
+                    Endpoint::new(start_coords[0], start_coords[1]),
+                    Endpoint::new(end_coords[0], end_coords[1]),
+                ));
+            }
+        }
+        None
+    }
+
+    fn find_endpoint_index(endpoints: &[Endpoint], target: &Endpoint, epsilon: f64) -> Option<usize> {
+        endpoints.iter().position(|e| e.approx_eq(target, epsilon))
+    }
+
+    fn add_or_find_endpoint(endpoints: &mut Vec<Endpoint>, ep: Endpoint, epsilon: f64) -> usize {
+        if let Some(idx) = find_endpoint_index(endpoints, &ep, epsilon) {
+            idx
+        } else {
+            endpoints.push(ep);
+            endpoints.len() - 1
+        }
+    }
+
+    fn generate_test_path(circles: usize) -> Vec<CircleCoord> {
+        let mut path = Vec::new();
+        path.push(CircleCoord::create_with_arc_index(0, 0));
+        for c in 1..=circles {
+            path.push(CircleCoord::create_with_arc_index(c, 0));
+        }
+        let outer_circle = circles;
+        let total_arcs = calc_total_arcs(outer_circle);
+        for a in 1..(total_arcs / 2) {
+            path.push(CircleCoord::create_with_arc_index(outer_circle, a));
+        }
+        path
+    }
+
+    #[test]
+    fn test_solution_path_elements_are_connected() {
+        use crate::maze::MazeDeserializer;
+        use std::fs;
+
+        let fixtures_dir = "tests/fixtures";
+        let entries = fs::read_dir(fixtures_dir)
+            .unwrap_or_else(|_| panic!("Failed to read directory: {}", fixtures_dir));
+
+        let json_files: Vec<_> = entries
+            .filter_map(|entry| entry.ok())
+            .filter(|entry| entry.path().extension().and_then(|s| s.to_str()) == Some("json"))
+            .collect();
+
+        assert!(!json_files.is_empty(), "No JSON files found in {}", fixtures_dir);
+
+        for entry in json_files {
+            let file_path = entry.path();
+            let file_name = file_path.file_name().unwrap().to_str().unwrap();
+
+            let json_content = fs::read_to_string(&file_path)
+                .unwrap_or_else(|_| panic!("Failed to read file: {:?}", file_path));
+
+            let json_data: serde_json::Value = serde_json::from_str(&json_content)
+                .unwrap_or_else(|_| panic!("Failed to parse JSON from: {}", file_name));
+
+            let maze = MazeDeserializer::deserialize(json_data)
+                .unwrap_or_else(|_| panic!("Failed to deserialize maze from: {}", file_name));
+
+            let path = generate_test_path(maze.circles());
+            let svg_string = render_with_path(&maze, &path);
+
+            let doc = roxmltree::Document::parse(&svg_string).unwrap_or_else(|_| {
+                panic!("Failed to parse SVG XML for file: {}", file_name)
+            });
+
+            let solution_path_g = doc
+                .descendants()
+                .find(|n| n.tag_name().name() == "g" && n.attribute("id") == Some("solution-path"))
+                .unwrap_or_else(|| {
+                    panic!("Failed to find g element with id='solution-path' for file: {}", file_name)
+                });
+
+            let mut endpoints: Vec<Endpoint> = Vec::new();
+            let mut edges: Vec<(usize, usize)> = Vec::new();
+            let epsilon = 1e-6;
+
+            for node in solution_path_g.children() {
+                let parsed = match node.tag_name().name() {
+                    "line" => parse_solution_line_endpoints(&node),
+                    "path" => parse_solution_arc_endpoints(&node),
+                    _ => None,
+                };
+
+                if let Some((start, end)) = parsed {
+                    if start.approx_eq(&end, epsilon) {
+                        continue;
+                    }
+                    let start_idx = add_or_find_endpoint(&mut endpoints, start, epsilon);
+                    let end_idx = add_or_find_endpoint(&mut endpoints, end, epsilon);
+                    edges.push((start_idx, end_idx));
+                }
+            }
+
+            if edges.is_empty() {
+                continue;
+            }
+
+            let mut degree = vec![0usize; endpoints.len()];
+            for &(a, b) in &edges {
+                degree[a] += 1;
+                degree[b] += 1;
+            }
+
+            let endpoints_with_degree_one: Vec<usize> = degree
+                .iter()
+                .enumerate()
+                .filter(|(_, &d)| d == 1)
+                .map(|(i, _)| i)
+                .collect();
+
+            assert_eq!(
+                endpoints_with_degree_one.len(),
+                2,
+                "Expected exactly 2 unconnected endpoints (start and end of path), found {} in {}",
+                endpoints_with_degree_one.len(),
+                file_name
+            );
+
+            let mut adjacency = vec![Vec::new(); endpoints.len()];
+            for &(a, b) in &edges {
+                adjacency[a].push(b);
+                adjacency[b].push(a);
+            }
+
+            let mut visited = vec![false; endpoints.len()];
+            dfs_visit(&adjacency, 0, &mut visited);
+
+            for (i, &v) in visited.iter().enumerate() {
+                assert!(
+                    v,
+                    "Endpoint {} is not connected to the main path in file: {}",
+                    i,
+                    file_name
+                );
+            }
+        }
+    }
 }
