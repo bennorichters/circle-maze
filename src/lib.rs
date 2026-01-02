@@ -7,7 +7,7 @@ mod merge;
 mod svg;
 
 use maze::{MazeDeserializer, MazeSerializer, factory};
-use svg::{render_with_path};
+use svg::render;
 
 fn create_rng() -> SmallRng {
     let mut seed = [0u8; 32];
@@ -19,7 +19,7 @@ fn create_rng() -> SmallRng {
 pub fn generate_maze_svg(circles: usize) -> String {
     let maze = factory(circles, &mut create_rng());
     let path = maze.tree_diameter();
-    render_with_path(&maze, &path)
+    render(&maze, &path, true)
 }
 
 #[wasm_bindgen]
@@ -39,5 +39,5 @@ pub fn load_maze_svg(json_string: &str) -> Result<String, String> {
         .map_err(|e| format!("Failed to deserialize maze: {}", e))?;
 
     let path = maze.tree_diameter();
-    Ok(render_with_path(&maze, &path))
+    Ok(render(&maze, &path, true))
 }
