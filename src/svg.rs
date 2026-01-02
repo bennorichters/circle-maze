@@ -1318,4 +1318,138 @@ mod tests {
             }
         }
     }
+
+    fn parse_marker_center(node: &roxmltree::Node) -> Option<Endpoint> {
+        let cx: f64 = node.attribute("cx")?.parse().ok()?;
+        let cy: f64 = node.attribute("cy")?.parse().ok()?;
+        Some(Endpoint::new(cx, cy))
+    }
+
+    #[test]
+    fn test_solution_path_endpoints_match_markers() {
+        use crate::maze::MazeDeserializer;
+        use std::fs;
+
+        let fixtures_dir = "tests/fixtures";
+        let entries = fs::read_dir(fixtures_dir)
+            .unwrap_or_else(|_| panic!("Failed to read directory: {}", fixtures_dir));
+
+        let json_files: Vec<_> = entries
+            .filter_map(|entry| entry.ok())
+            .filter(|entry| entry.path().extension().and_then(|s| s.to_str()) == Some("json"))
+            .collect();
+
+        assert!(!json_files.is_empty(), "No JSON files found in {}", fixtures_dir);
+
+        for entry in json_files {
+            let file_path = entry.path();
+            let file_name = file_path.file_name().unwrap().to_str().unwrap();
+
+            let json_content = fs::read_to_string(&file_path)
+                .unwrap_or_else(|_| panic!("Failed to read file: {:?}", file_path));
+
+            let json_data: serde_json::Value = serde_json::from_str(&json_content)
+                .unwrap_or_else(|_| panic!("Failed to parse JSON from: {}", file_name));
+
+            let maze = MazeDeserializer::deserialize(json_data)
+                .unwrap_or_else(|_| panic!("Failed to deserialize maze from: {}", file_name));
+
+            let path = generate_test_path(maze.circles());
+            let svg_string = render_with_path(&maze, &path);
+
+            let doc = roxmltree::Document::parse(&svg_string).unwrap_or_else(|_| {
+                panic!("Failed to parse SVG XML for file: {}", file_name)
+            });
+
+            let solution_path_g = doc
+                .descendants()
+                .find(|n| n.tag_name().name() == "g" && n.attribute("id") == Some("solution-path"))
+                .unwrap_or_else(|| {
+                    panic!("Failed to find g element with id='solution-path' for file: {}", file_name)
+                });
+
+            let markers_g = doc
+                .descendants()
+                .find(|n| {
+                    n.tag_name().name() == "g" && n.attribute("id") == Some("start-finish-markers")
+                })
+                .unwrap_or_else(|| {
+                    panic!(
+                        "Failed to find g element with id='start-finish-markers' for file: {}",
+                        file_name
+                    )
+                });
+
+            let mut endpoints: Vec<Endpoint> = Vec::new();
+            let mut edges: Vec<(usize, usize)> = Vec::new();
+            let epsilon = 1e-6;
+
+            for node in solution_path_g.children() {
+                let parsed = match node.tag_name().name() {
+                    "line" => parse_solution_line_endpoints(&node),
+                    "path" => parse_solution_arc_endpoints(&node),
+                    _ => None,
+                };
+
+                if let Some((start, end)) = parsed {
+                    if start.approx_eq(&end, epsilon) {
+                        continue;
+                    }
+                    let start_idx = add_or_find_endpoint(&mut endpoints, start, epsilon);
+                    let end_idx = add_or_find_endpoint(&mut endpoints, end, epsilon);
+                    edges.push((start_idx, end_idx));
+                }
+            }
+
+            if edges.is_empty() {
+                continue;
+            }
+
+            let mut degree = vec![0usize; endpoints.len()];
+            for &(a, b) in &edges {
+                degree[a] += 1;
+                degree[b] += 1;
+            }
+
+            let path_endpoints: Vec<&Endpoint> = degree
+                .iter()
+                .enumerate()
+                .filter(|(_, &d)| d == 1)
+                .map(|(i, _)| &endpoints[i])
+                .collect();
+
+            assert_eq!(
+                path_endpoints.len(),
+                2,
+                "Expected exactly 2 path endpoints, found {} in {}",
+                path_endpoints.len(),
+                file_name
+            );
+
+            let marker_centers: Vec<Endpoint> = markers_g
+                .children()
+                .filter(|n| n.tag_name().name() == "circle")
+                .filter_map(|n| parse_marker_center(&n))
+                .collect();
+
+            assert_eq!(
+                marker_centers.len(),
+                2,
+                "Expected exactly 2 marker circles, found {} in {}",
+                marker_centers.len(),
+                file_name
+            );
+
+            for marker in &marker_centers {
+                let matches = path_endpoints.iter().any(|ep| ep.approx_eq(marker, epsilon));
+                assert!(
+                    matches,
+                    "Marker at ({}, {}) does not match any path endpoint in {}",
+                    marker.x,
+                    marker.y,
+                    file_name
+                );
+            }
+        }
+    }
 }
