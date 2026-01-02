@@ -6,7 +6,7 @@ use super::geometry::{
     polar_to_cartesian, CIRCLE_RADIUS_STEP,
 };
 
-pub fn render_arcs(maze: &Maze) -> String {
+fn render_arcs(maze: &Maze) -> String {
     let mut content = String::new();
     let merged_arcs = merge_arcs(maze);
 
@@ -42,7 +42,7 @@ pub fn render_arcs(maze: &Maze) -> String {
     content
 }
 
-pub fn render_lines(maze: &Maze) -> String {
+fn render_lines(maze: &Maze) -> String {
     let mut content = String::new();
     let merged_lines = merge_lines(maze);
 
