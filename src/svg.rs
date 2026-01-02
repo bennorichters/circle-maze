@@ -570,6 +570,20 @@ mod tests {
         total_steps
     }
 
+    fn generate_test_path(circles: usize) -> Vec<CircleCoord> {
+        let mut path = Vec::new();
+        path.push(CircleCoord::create_with_arc_index(0, 0));
+        for c in 1..=circles {
+            path.push(CircleCoord::create_with_arc_index(c, 0));
+        }
+        let outer_circle = circles;
+        let total_arcs = calc_total_arcs(outer_circle);
+        for a in 1..(total_arcs / 2) {
+            path.push(CircleCoord::create_with_arc_index(outer_circle, a));
+        }
+        path
+    }
+
     fn for_each_fixture<F>(test_fn: F)
     where
         F: Fn(&str, &crate::maze::Maze, &serde_json::Value, &str),
@@ -603,11 +617,7 @@ mod tests {
             let maze = MazeDeserializer::deserialize(json_data.clone())
                 .unwrap_or_else(|_| panic!("Failed to deserialize maze from: {}", file_name));
 
-            let path = vec![
-                CircleCoord::create_with_arc_index(0, 0),
-                CircleCoord::create_with_arc_index(1, 0),
-            ];
-
+            let path = generate_test_path(maze.circles());
             let svg_string = render_with_path(&maze, &path);
 
             test_fn(file_name, &maze, &json_data, &svg_string);
@@ -718,6 +728,7 @@ mod tests {
             });
 
             let max_radius = (maze.circles() * CIRCLE_RADIUS_STEP + HALF_RADIUS_STEP) as f64;
+            let max_radius_with_markers = max_radius + MARKER_RADIUS as f64;
 
             for node in doc.descendants() {
                 match node.tag_name().name() {
@@ -738,10 +749,17 @@ mod tests {
                         let distance_from_origin = (cx * cx + cy * cy).sqrt();
                         let max_extent = distance_from_origin + r;
 
+                        let is_marker = (r - MARKER_RADIUS as f64).abs() < 1e-6;
+                        let allowed_radius = if is_marker {
+                            max_radius_with_markers
+                        } else {
+                            max_radius
+                        };
+
                         assert!(
-                            max_extent <= max_radius + 1e-6,
+                            max_extent <= allowed_radius + 1e-6,
                             "Circle at ({}, {}) with radius {} exceeds max radius {} in {}",
-                            cx, cy, r, max_radius, file_name
+                            cx, cy, r, allowed_radius, file_name
                         );
                     }
                     "line" => {
@@ -1126,11 +1144,207 @@ mod tests {
             let mut visited = vec![false; n];
             dfs_visit(&graph, 0, &mut visited);
 
-            for i in 0..n {
+            for (i, &v) in visited.iter().enumerate() {
                 assert!(
-                    visited[i],
+                    v,
                     "Border element {} is not connected to the main graph in file: {}",
                     i,
+                    file_name
+                );
+            }
+        });
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    struct Endpoint {
+        x: f64,
+        y: f64,
+    }
+
+    impl Endpoint {
+        fn new(x: f64, y: f64) -> Self {
+            Self { x, y }
+        }
+
+        fn approx_eq(&self, other: &Self, epsilon: f64) -> bool {
+            (self.x - other.x).abs() < epsilon && (self.y - other.y).abs() < epsilon
+        }
+    }
+
+    fn parse_solution_line_endpoints(node: &roxmltree::Node) -> Option<(Endpoint, Endpoint)> {
+        let x1: f64 = node.attribute("x1")?.parse().ok()?;
+        let y1: f64 = node.attribute("y1")?.parse().ok()?;
+        let x2: f64 = node.attribute("x2")?.parse().ok()?;
+        let y2: f64 = node.attribute("y2")?.parse().ok()?;
+        Some((Endpoint::new(x1, y1), Endpoint::new(x2, y2)))
+    }
+
+    fn parse_solution_arc_endpoints(node: &roxmltree::Node) -> Option<(Endpoint, Endpoint)> {
+        let d = node.attribute("d")?;
+        let parts: Vec<&str> = d.split_whitespace().collect();
+        if parts.len() >= 8 && parts[0] == "M" && parts[2] == "A" {
+            let start_coords: Vec<f64> = parts[1]
+                .split(',')
+                .filter_map(|s| s.parse().ok())
+                .collect();
+            let end_coords: Vec<f64> = parts[7]
+                .split(',')
+                .filter_map(|s| s.parse().ok())
+                .collect();
+            if start_coords.len() == 2 && end_coords.len() == 2 {
+                return Some((
+                    Endpoint::new(start_coords[0], start_coords[1]),
+                    Endpoint::new(end_coords[0], end_coords[1]),
+                ));
+            }
+        }
+        None
+    }
+
+    fn find_endpoint_index(endpoints: &[Endpoint], target: &Endpoint, epsilon: f64) -> Option<usize> {
+        endpoints.iter().position(|e| e.approx_eq(target, epsilon))
+    }
+
+    fn add_or_find_endpoint(endpoints: &mut Vec<Endpoint>, ep: Endpoint, epsilon: f64) -> usize {
+        if let Some(idx) = find_endpoint_index(endpoints, &ep, epsilon) {
+            idx
+        } else {
+            endpoints.push(ep);
+            endpoints.len() - 1
+        }
+    }
+
+    fn parse_marker_center(node: &roxmltree::Node) -> Option<Endpoint> {
+        let cx: f64 = node.attribute("cx")?.parse().ok()?;
+        let cy: f64 = node.attribute("cy")?.parse().ok()?;
+        Some(Endpoint::new(cx, cy))
+    }
+
+    fn extract_solution_path_edges(
+        svg_string: &str,
+        file_name: &str,
+    ) -> (Vec<Endpoint>, Vec<(usize, usize)>) {
+        let doc = roxmltree::Document::parse(svg_string).unwrap_or_else(|_| {
+            panic!("Failed to parse SVG XML for file: {}", file_name)
+        });
+
+        let solution_path_g = doc
+            .descendants()
+            .find(|n| n.tag_name().name() == "g" && n.attribute("id") == Some("solution-path"))
+            .unwrap_or_else(|| {
+                panic!("Failed to find g element with id='solution-path' for file: {}", file_name)
+            });
+
+        let mut endpoints: Vec<Endpoint> = Vec::new();
+        let mut edges: Vec<(usize, usize)> = Vec::new();
+        let epsilon = 1e-6;
+
+        for node in solution_path_g.children() {
+            let parsed = match node.tag_name().name() {
+                "line" => parse_solution_line_endpoints(&node),
+                "path" => parse_solution_arc_endpoints(&node),
+                _ => None,
+            };
+
+            if let Some((start, end)) = parsed {
+                if start.approx_eq(&end, epsilon) {
+                    continue;
+                }
+                let start_idx = add_or_find_endpoint(&mut endpoints, start, epsilon);
+                let end_idx = add_or_find_endpoint(&mut endpoints, end, epsilon);
+                edges.push((start_idx, end_idx));
+            }
+        }
+
+        (endpoints, edges)
+    }
+
+    #[test]
+    fn test_solution_path_is_connected_and_matches_markers() {
+        for_each_fixture(|file_name, _maze, _json_data, svg_string| {
+            let doc = roxmltree::Document::parse(svg_string).unwrap_or_else(|_| {
+                panic!("Failed to parse SVG XML for file: {}", file_name)
+            });
+
+            let markers_g = doc
+                .descendants()
+                .find(|n| {
+                    n.tag_name().name() == "g" && n.attribute("id") == Some("start-finish-markers")
+                })
+                .unwrap_or_else(|| {
+                    panic!(
+                        "Failed to find g element with id='start-finish-markers' for file: {}",
+                        file_name
+                    )
+                });
+
+            let (endpoints, edges) = extract_solution_path_edges(svg_string, file_name);
+
+            if edges.is_empty() {
+                return;
+            }
+
+            let mut degree = vec![0usize; endpoints.len()];
+            for &(a, b) in &edges {
+                degree[a] += 1;
+                degree[b] += 1;
+            }
+
+            let path_endpoints: Vec<&Endpoint> = degree
+                .iter()
+                .enumerate()
+                .filter(|(_, &d)| d == 1)
+                .map(|(i, _)| &endpoints[i])
+                .collect();
+
+            assert_eq!(
+                path_endpoints.len(),
+                2,
+                "Expected exactly 2 path endpoints (start and end), found {} in {}",
+                path_endpoints.len(),
+                file_name
+            );
+
+            let mut adjacency = vec![Vec::new(); endpoints.len()];
+            for &(a, b) in &edges {
+                adjacency[a].push(b);
+                adjacency[b].push(a);
+            }
+
+            let mut visited = vec![false; endpoints.len()];
+            dfs_visit(&adjacency, 0, &mut visited);
+
+            for (i, &v) in visited.iter().enumerate() {
+                assert!(
+                    v,
+                    "Endpoint {} is not connected to the main path in file: {}",
+                    i,
+                    file_name
+                );
+            }
+
+            let marker_centers: Vec<Endpoint> = markers_g
+                .children()
+                .filter(|n| n.tag_name().name() == "circle")
+                .filter_map(|n| parse_marker_center(&n))
+                .collect();
+
+            assert_eq!(
+                marker_centers.len(),
+                2,
+                "Expected exactly 2 marker circles, found {} in {}",
+                marker_centers.len(),
+                file_name
+            );
+
+            let epsilon = 1e-6;
+            for marker in &marker_centers {
+                let matches = path_endpoints.iter().any(|ep| ep.approx_eq(marker, epsilon));
+                assert!(
+                    matches,
+                    "Marker at ({}, {}) does not match any path endpoint in {}",
+                    marker.x,
+                    marker.y,
                     file_name
                 );
             }
