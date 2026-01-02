@@ -13,7 +13,7 @@ use solution_path::render_solution_path;
 
 const SVG_VIEWBOX_PADDING: usize = 20;
 
-pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
+pub fn render(maze: &Maze, path: &[CircleCoord], include_path: bool) -> String {
     let circles = maze.circles();
     let max_radius = circles * CIRCLE_RADIUS_STEP;
     let view_size = max_radius * 2 + SVG_VIEWBOX_PADDING;
@@ -21,10 +21,16 @@ pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
     let mut svg_content = String::new();
     svg_content.push_str(&render_svg_header(view_size));
     svg_content.push_str(&render_borders(maze));
-    svg_content.push_str(&render_solution_path(path));
+    if include_path {
+        svg_content.push_str(&render_solution_path(path));
+    }
     svg_content.push_str(&render_path_markers(path));
     svg_content.push_str("</svg>\n");
     svg_content
+}
+
+pub fn render_with_path(maze: &Maze, path: &[CircleCoord]) -> String {
+    render(maze, path, true)
 }
 
 fn render_svg_header(view_size: usize) -> String {
