@@ -31,6 +31,14 @@ cargo run -- --parse maze.json
 
 This loads a maze from JSON and outputs `maze.svg`.
 
+### Options
+
+- `--no-path` - Generate the maze SVG without highlighting the longest path
+
+```bash
+cargo run -- --create 5 --no-path
+```
+
 ## Web Application
 
 ### Build WebAssembly module
@@ -63,7 +71,7 @@ Then open http://localhost:8080 in your browser.
 
 ## Dependencies
 
-- Rust (2024 edition)
+- Rust (2021 edition)
 - wasm-pack (for building web app)
 
 ## Project Structure
@@ -74,7 +82,12 @@ circle-maze/
 │   ├── main.rs            - CLI entry point
 │   ├── lib.rs             - WebAssembly bindings
 │   ├── maze.rs            - Maze generation algorithm
-│   ├── svg.rs             - SVG rendering
+│   ├── svg/
+│   │   ├── mod.rs         - SVG rendering module
+│   │   ├── geometry.rs    - Geometric calculations
+│   │   ├── markers.rs     - SVG marker definitions
+│   │   ├── borders.rs     - Border rendering
+│   │   └── solution_path.rs - Path highlighting
 │   ├── circle_coord.rs    - Coordinate system
 │   ├── json.rs            - JSON parsing
 │   └── merge.rs           - Path merging utilities
@@ -82,7 +95,8 @@ circle-maze/
 │   ├── index.html         - Web UI
 │   ├── app.js             - JavaScript loader
 │   └── pkg/               - Generated WASM files (after build)
-└── build-wasm.sh          - Build script
+├── build.rs               - Cargo build script
+└── build-wasm.sh          - WASM build script
 ```
 
 ## Algorithm
